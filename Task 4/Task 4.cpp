@@ -6,21 +6,36 @@
 #include <random>
 #include <Windows.h>
 
+enum KeyCode 
+{
+    KEY_ENTER = 13,
+    KEY_DELETE = 83,
+    KEY_UP = 72,
+    KEY_DOWN = 80,
+    KEY_LEFT = 77,
+    KEY_RIGHT = 75,
+    KEY_ESCAPE = 27,
+};
+enum MenuCode
+{
+    MENU_ENTER = 1,
+    MENU_DELETE,
+    MENU_UP,
+    MENU_DOWN,
+    MENU_LEFT,
+    MENU_RIGHT,
+    MENU_ESCAPE,
+};
 
-#define KEY_UP 72
-#define KEY_DOWN 80
-#define KEY_LEFT 77
-#define KEY_RIGHT 75
-#define KEY_ESCAPE 27
-#define KEY_ENTER 27
 
-using namespace std;
-
-void CreateRandomBinDataset(string dir, int size);
+void CreateRandomBinDataset(std::string dir, int size);
+void CreateMenu(int code);
 int NavigationMenu();
+
 
 int main(int argc, char* argv[])
 {
+    using namespace std;
     setlocale(LC_ALL, "ru");
 
     string path = "random_data.bin";
@@ -29,15 +44,18 @@ int main(int argc, char* argv[])
 
     //cout << cin.peek() << '\t';
 
+    cout << "size string " <<sizeof(string) << endl;
+
     while (true) {
-        NavigationMenu();
+        cout << NavigationMenu() << "\n";
     }
      
     return 0;
 }
 
-void CreateRandomBinDataset(string dir, int size) 
+void CreateRandomBinDataset(std::string dir, int size) 
 {
+    using namespace std;
     random_device rd;
     mt19937 mersenne(rd());
 
@@ -76,28 +94,36 @@ void CreateRandomBinDataset(string dir, int size)
 
 int NavigationMenu()
 {
+    using std::cout;
+    using std::endl;
 
-    cout << _getch();
-    switch (_getch()) {
-    case KEY_UP:
-        cout << endl << "Up" << endl;//key up
-        break;
-    case KEY_DOWN:
-        cout << endl << "Down" << endl;   // key down
-        break;
-    case KEY_LEFT:
-        cout << endl << "Right" << endl;  // key right
-        break;
-    case KEY_RIGHT:
-        cout << endl << "Left" << endl;  // key left
-        break;
+    switch (_getch())
+    {
     case KEY_ESCAPE:
-        cout << endl << "Esc" << endl;  // key left
-        break;
-    default:
-        cout << endl << "NULL" << endl;  // any other key
-        system("cls");
-        break;
+        return MENU_ESCAPE;
+
+    case KEY_ENTER:
+        return MENU_ENTER;
+
+    }
+    
+    // второй вызов _getch() для считывания функциональных клавишь 
+    switch (_getch())
+    {
+    case KEY_UP:
+        return MENU_UP;
+
+    case KEY_DOWN:
+        return MENU_DOWN;
+
+    case KEY_LEFT:
+        return MENU_LEFT;
+
+    case KEY_RIGHT:
+        return MENU_RIGHT;
+
+    case KEY_DELETE:
+        return MENU_DELETE;
     }
 
     return 0;
