@@ -6,32 +6,56 @@
 #include <random>
 #include <Windows.h>
 
-enum KeyCode 
+enum AsciiCode 
 {
-    KEY_ENTER = 13,
-    KEY_DELETE = 83,
-    KEY_UP = 72,
-    KEY_DOWN = 80,
-    KEY_LEFT = 77,
-    KEY_RIGHT = 75,
-    KEY_ESCAPE = 27,
+    CODE_ENTER = 13,
+    CODE_DELETE = 83,
+    CODE_UP = 72,
+    CODE_DOWN = 80,
+    CODE_LEFT = 77,
+    CODE_RIGHT = 75,
+    CODE_ESCAPE = 27,
 };
-enum MenuCode
+
+enum ButtonCode
 {
-    MENU_ENTER = 1,
-    MENU_DELETE,
-    MENU_UP,
-    MENU_DOWN,
-    MENU_LEFT,
-    MENU_RIGHT,
-    MENU_ESCAPE,
+    KEY_UP = 1,
+    KEY_DOWN,
+    KEY_LEFT,
+    KEY_RIGHT,
+    KEY_ENTER,
+    KEY_DELETE,
+    KEY_ESCAPE,
+};
+
+enum MenuItem
+{
+    ITEM_VIEW = 1,
+    ITEM_SEARCH,
+    ITEM_APPEND,
+    ITEM_CHANGE,
+    ITEM_CRATE,
+    ITEM_EXIT
+};
+
+enum StepsIterators
+{
+    HORIZONTAL_STEP = 1,
+    VERTICAL_STEP = 1,
 };
 
 
 void CreateRandomBinDataset(std::string dir, int size);
-void CreateMenu(int code);
-int NavigationMenu();
 
+bool NavigationMenu(int vertPos, int codeItem);
+int ButtonsReading(int* horPos, int* VertPos);
+
+void MainMenuPrinting(int code);
+void ViewItemPrinting();
+void SearchItemPrinting();
+void AppendItemPrinting();
+void ChangeItemPrinting();
+void CrateItemPrinting();
 
 int main(int argc, char* argv[])
 {
@@ -39,15 +63,19 @@ int main(int argc, char* argv[])
     setlocale(LC_ALL, "ru");
 
     string path = "random_data.bin";
-
     //CreateRandomBinDataset(path, 10000);
-
     //cout << cin.peek() << '\t';
 
-    cout << "size string " <<sizeof(string) << endl;
 
-    while (true) {
-        cout << NavigationMenu() << "\n";
+    int horizontalPos = 0, verticalPos = 0;
+    bool exitFlag = true;
+
+
+    while (exitFlag) {
+        //cout << ButtonsReading() << "\n";
+        system("cls");
+        ButtonsReading(&horizontalPos, &verticalPos);
+        exitFlag = NavigationMenu(verticalPos, ButtonsReading(&horizontalPos, &verticalPos));
     }
      
     return 0;
@@ -92,39 +120,73 @@ void CreateRandomBinDataset(std::string dir, int size)
     delete[] Users;
 }
 
-int NavigationMenu()
+int ButtonsReading(int* horPos, int* VertPos)
 {
     using std::cout;
     using std::endl;
 
     switch (_getch())
     {
-    case KEY_ESCAPE:
-        return MENU_ESCAPE;
+    case CODE_ESCAPE:
+        return KEY_ESCAPE;
 
-    case KEY_ENTER:
-        return MENU_ENTER;
+    case CODE_ENTER:
+        return KEY_ENTER;
 
     }
     
     // второй вызов _getch() для считывания функциональных клавишь 
     switch (_getch())
     {
-    case KEY_UP:
-        return MENU_UP;
+    case CODE_UP:
+        *horPos += VERTICAL_STEP;
+        return KEY_UP;
 
-    case KEY_DOWN:
-        return MENU_DOWN;
+    case CODE_DOWN:
+        *horPos -= VERTICAL_STEP;
+        return KEY_DOWN;
 
-    case KEY_LEFT:
-        return MENU_LEFT;
+    case CODE_LEFT:
+        *VertPos -= HORIZONTAL_STEP;
+        return KEY_LEFT;
 
-    case KEY_RIGHT:
-        return MENU_RIGHT;
+    case CODE_RIGHT:
+        *VertPos += HORIZONTAL_STEP;
+        return KEY_RIGHT;
 
-    case KEY_DELETE:
-        return MENU_DELETE;
+    case CODE_DELETE:
+        return KEY_DELETE;
     }
+}
 
-    return 0;
+bool NavigationMenu(int vertPos, int codeItem)
+{
+    if (codeItem == KEY_ENTER)
+    {
+        switch (vertPos)
+        {
+        case ITEM_VIEW:
+            ViewItemPrinting();
+            break;
+
+        case ITEM_SEARCH:
+            SearchItemPrinting();
+            break;
+
+        case ITEM_APPEND:
+            AppendItemPrinting();
+            break;
+
+        case ITEM_CHANGE:
+            ChangeItemPrinting();
+            break;
+
+        case ITEM_CRATE:
+            CrateItemPrinting();
+            break;
+
+        case ITEM_EXIT:
+            return false;      
+        }
+    }
 }
