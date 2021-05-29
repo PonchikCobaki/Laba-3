@@ -143,6 +143,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="random_data.bin" />
+    <None Include="test_data.bin" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
