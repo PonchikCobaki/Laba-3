@@ -8,6 +8,7 @@
 #include <random>
 #include <Windows.h>
 
+
 enum AsciiCode
 {
 	CODE_ENTER = 13,
@@ -67,6 +68,13 @@ enum MenuLevels
 	LEVEL_SEARCH,
 	LEVEL_APPEND
 };
+
+enum StringFieldLength
+{
+	LENGTH_FIRST_NAME = 15,
+	LENGTH_LAST_NAME = 15,
+};
+
 #pragma pack(1)
 static struct MenuTemplates
 {
@@ -85,26 +93,39 @@ static struct MenuTemplates
 
 #pragma pack(1)
 static struct ExamResults {
+
 	std::string firstName;
 	std::string lastName;
-	int mathScore;
-	int ruLangScore;
-	int enLangScore;
+	unsigned mathScore;
+	unsigned ruLangScore;
+	unsigned enLangScore;
 };
 #pragma pack (pop)
 
+#pragma pack(1)
+static struct ExamResultsBinary {
+	char *firstName = new char[LENGTH_FIRST_NAME];
+	char *lastName = new char[LENGTH_LAST_NAME];
+	u_short mathScore;
+	u_short ruLangScore;
+	u_short enLangScore;
+	u_short writeSize = 36;
+	u_short stSize = 18;
+};
+#pragma pack (pop)
 using findingCursorPositionFnc = void(*)(short&, short&, int, int);
 using insertCursorPositionFnc = std::string(*)(std::string, const short&, const MenuTemplates&, short);
 using buttonsReadingFnc = short(*)(short&, short&);
 
-void CreateRandomBinDataset(std::string dir, int size);
+void CreateRandomBinDataset(std::string dir);
 short ButtonsReading(short& horPosOut, short& VertPosOut);
 void FindingCursorPosition(short& horPosOut, short& vertPosOut, int length, int heigh);
+void ReadingBinaryFile(std::string dir, std::list<ExamResults>& userData);
 
 std::string InsertCursorPosition(std::string str, const short& vertPos, const MenuTemplates& mTemps, short level);
 void MainMenuPrinting(const short& vertPos, const MenuTemplates& mTemps, insertCursorPositionFnc insCurPosFnc);
 
-void ViewItemPrinting(std::string dir, std::list<ExamResults>& userData);
+void ViewItemPrinting(std::string dir, std::list<ExamResults> &userData);
 //
 //void SearchItemPrinting();
 //
@@ -118,6 +139,7 @@ void CrateItemPrinting(std::string& dir, std::list<ExamResults>& userData, const
 int main(int argc, char* argv[])
 {
 	using namespace std;
+
 	setlocale(LC_ALL, "ru");
 
 	string path = "random_data.bin";
@@ -131,7 +153,7 @@ int main(int argc, char* argv[])
 	path = "random_data.bin";
 	cout << path << endl;
 	system("pause");
-	//CreateRandomBinDataset(path, 10);
+	CreateRandomBinDataset(path);
 	//cout << cin.peek() << '\t';
 
 	MenuTemplates menuMain = {
@@ -148,10 +170,11 @@ int main(int argc, char* argv[])
 	};
 
 	list<ExamResults> userData;
+
 	short horizontalPos = 1, verticalPos = 1;
 	bool exitFlag = true;
 	short codeItem = 0;
-
+	//ReadingBinaryFile(path, userData);
 	while (exitFlag)
 	{
 		MainMenuPrinting(verticalPos, menuMain, InsertCursorPosition);
@@ -162,7 +185,8 @@ int main(int argc, char* argv[])
 			switch (verticalPos)
 			{
 			case ITEM_VIEW:
-				ViewItemPrinting(path, userData);
+				//ViewItemPrinting(path, userData);
+				ReadingBinaryFile(path, userData);
 				break;
 
 			case ITEM_SEARCH:
@@ -178,8 +202,8 @@ int main(int argc, char* argv[])
 				break;
 
 			case ITEM_CRATE:
-				CrateItemPrinting(path, userData, menuMain, horizontalPos, verticalPos, InsertCursorPosition,
-					ButtonsReading, FindingCursorPosition);
+				//CrateItemPrinting(path, userData, menuMain, horizontalPos, verticalPos, InsertCursorPosition,
+				//	ButtonsReading, FindingCursorPosition);
 				break;
 
 			case ITEM_EXIT:
@@ -189,37 +213,44 @@ int main(int argc, char* argv[])
 		}
 	}
 
+
 	return 0;
 }
 
-void CreateRandomBinDataset(std::string dir, int size)
+void CreateRandomBinDataset(std::string dir)
 {
 	using namespace std;
+	using std::cout;
 	random_device rd;
 	mt19937 mersenne(rd());
 
+	u_short size;
+	cout << "количество учетных записей: ";
+	cin >> size;
 	string firstNames[] = { "Иван", "Пётр", "Василий", "Марат", "Григорий",
 		"Ильназ", "Али", "Максим", "Артём", "Джек" };
 	string lastNames[] = { "Иванов", "Пётров", "Васильевич", "Айзатов",
 		"Шайхутдинов", "Кларксон", "Ахматович", "Белых", "Понасенков", "Хабибулин" };
+	ExamResultsBinary users;
 
-	cout << sizeof(ExamResults) << endl;
-	ExamResults users;
+	cout << sizeof(ExamResultsBinary) << endl;
 	ofstream outBinFile(dir, ios::binary);
-	cout << sizeof(users) << endl;
 	for (int i = 0; i < size; i++) {
-		users.firstName = firstNames[mersenne() % 10];
-		users.lastName = lastNames[mersenne() % 10];
+		strcpy_s(users.firstName, LENGTH_FIRST_NAME, firstNames[mersenne() % 10].c_str());
+		strcpy_s(users.lastName, LENGTH_LAST_NAME, lastNames[mersenne() % 10].c_str());
 		users.mathScore = mersenne() % 101;
 		users.ruLangScore = mersenne() % 101;
 		users.enLangScore = mersenne() % 101;
 
-		outBinFile.write((char*)&users, sizeof(ExamResults));
+		outBinFile.write(users.firstName, sizeof(*users.lastName) * LENGTH_FIRST_NAME);
+		outBinFile.write(users.lastName, sizeof(*users.firstName) * LENGTH_LAST_NAME);
+		outBinFile.write((char*)&users.mathScore, sizeof(users.mathScore));
+		outBinFile.write((char*)&users.ruLangScore, sizeof(users.ruLangScore));
+		outBinFile.write((char*)&users.enLangScore, sizeof(users.enLangScore));
 
-		cout << users.firstName << " " << users.lastName << "\t" << users.mathScore <<
+		cout << users.firstName << " " << users.lastName << " " << users.mathScore <<
 			"\t" << users.ruLangScore << "\t" << users.enLangScore << endl;
 	}
-
 	outBinFile.close();
 
 	system("pause");
@@ -282,6 +313,60 @@ void FindingCursorPosition(short& horPosOut, short& vertPosOut, int length, int 
 	else if (vertPosOut == heigh + 1) {
 		vertPosOut /= heigh;
 	}
+}
+
+void ReadingBinaryFile(std::string dir, std::list<ExamResults>& userData)
+{
+	using namespace std;
+
+	ifstream inBinFile;
+	inBinFile.open(dir, ios_base::binary);
+	if (!inBinFile) {
+		cerr << "Error opening" << endl;
+		exit(1);
+	}
+
+	ExamResultsBinary bufData = {};
+	int sizeArr = inBinFile.seekg(0, ios::end).tellg() / bufData.writeSize;
+	inBinFile.seekg(0, ios::beg);
+	userData.clear();
+	userData.resize(sizeArr);
+	cout << "struct size: " << sizeArr << endl;
+	cout << " sizeof(ExamResults): " << bufData.writeSize << endl;
+
+	auto iter = userData.begin();
+	for (int i = 0; i < sizeArr; ++i, ++iter) {
+		inBinFile.read(bufData.firstName, sizeof(*bufData.firstName) * LENGTH_FIRST_NAME);
+		inBinFile.read(bufData.lastName, sizeof(*bufData.lastName) * LENGTH_LAST_NAME);
+		inBinFile.read(reinterpret_cast<char*>(&bufData.mathScore), sizeof(bufData.mathScore));
+		inBinFile.read(reinterpret_cast<char*>(&bufData.ruLangScore), sizeof(bufData.ruLangScore));
+		inBinFile.read(reinterpret_cast<char*>(&bufData.enLangScore), sizeof(bufData.enLangScore));
+		
+		cout << bufData.firstName << " " << bufData.lastName << " " << bufData.mathScore <<
+			"\t" << bufData.ruLangScore << "\t" << bufData.enLangScore << endl;
+		iter->firstName = string(bufData.firstName);
+		iter->lastName = string(bufData.lastName);
+		iter->mathScore = bufData.mathScore;
+		iter->ruLangScore = bufData.ruLangScore;
+		iter->enLangScore = bufData.enLangScore;
+		
+	}
+	cout << inBinFile.tellg() << endl;
+	inBinFile.close();
+
+	int count = 0;
+	for (const ExamResults& id : userData) {
+		cout << count << " " << id.firstName << " " << id.lastName << " " << id.mathScore
+			<< " " << id.ruLangScore << " " << id.enLangScore << endl;
+		++count;
+	}
+	//for (int i = 0; i < sizeArr; ++i) {
+	//	cout << " " << bufData[i];
+	//	if (i % sizeArr == 0) {
+	//		cout << endl;
+	//	}
+	//}
+	system("pause");
 }
 
 std::string InsertCursorPosition(std::string str, const short& vertPos, const MenuTemplates& mTemps, short level)
@@ -367,7 +452,7 @@ void MainMenuPrinting(const short& vertPos, const MenuTemplates& mTemps, insertC
 	cout << insCurPosFnc(mTemps.lineExit, vertPos, mTemps, LEVEL_MAIN) << endl;
 }
 
-void ViewItemPrinting(std::string dir, std::list<ExamResults>& userData)
+void ViewItemPrinting(std::string dir, std::list<ExamResults> &userData)
 {
 	using namespace std;
 
@@ -380,22 +465,28 @@ void ViewItemPrinting(std::string dir, std::list<ExamResults>& userData)
 	}
 
 	int n = inf.seekg(0, ios::end).tellg() / sizeof(ExamResults);
+	cout << "n: " << n << endl;
+	cout << " sizeof(ExamResults): " << sizeof(ExamResults) << endl;
 	inf.seekg(0, ios::beg);
-	ExamResults bufData;
+//	ExamResults bufData;
+	ExamResults bufData[10];
 
-	for (int i = 0; i < (n * 5); ++i) {
-		inf.read((char*)&bufData, sizeof(ExamResults));
-		userData.push_back(bufData);
+	userData.clear();
+
+
+	for (int i = 0; i < n; ++i) {
+		//inf.read((char*)&bufData[i], sizeof(ExamResults));
+		//userData.push_back(bufData);
 	}
-	cout << inf.tellg() << endl;
+	//cout << inf.tellg() << endl;
+	inf.close();
 
 	int count = 0;
-	for (const auto& id : userData) {
+	for (const ExamResults &id : userData) {
 		cout << count << " "<< id.firstName << " " << id.lastName << " " << id.mathScore 
 			<< " " << id.ruLangScore <<" " << id.enLangScore << endl;
 		++count;
 	}
-	inf.close();
 
 	system("pause");
 }
