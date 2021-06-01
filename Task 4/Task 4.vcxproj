@@ -139,7 +139,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Task 4.cpp" />
+    <ClCompile Include="task4.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="random_data.bin" />
