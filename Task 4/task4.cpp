@@ -1,13 +1,17 @@
-﻿#include <conio.h>
+﻿#include <algorithm>
+#include <conio.h>
 #include <sstream>
 #include <string>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
 #include <list>
+#include <vector>
 #include <iterator>
 #include <random>
 #include <Windows.h>
+#include <filesystem>
+
 
 
 enum AsciiCode
@@ -105,6 +109,10 @@ enum IndexConst {
 	IND_CONV_FACTOR = 1, // index conversion factor
 };
 
+enum DataBuffersSize {
+	SUBFILE_SIZE = 2, // размер под файлов для удаления/изменения данных
+};
+
 #pragma pack(1)
 static struct MenuTemplates
 {
@@ -159,19 +167,27 @@ static struct ExamResultsBinary {
 
 using findingCursorPositionFnc1 = void(*)(u_int&, const u_int&);
 using findingCursorPositionFnc2 = void(*)(u_int&, u_int&, const u_int&, const u_int&);
-using insertCursorPositionFnc  = std::string(*)(std::string, const u_int&, const MenuTemplates&, u_short, const u_int&);
-using buttonsReadingFnc		   = u_short(*)(u_int&, u_int&);
-using readingBinaryFileFnc     = void(*)(const std::string, std::list<ExamResults>&, u_int&, u_int&, u_int&);
+using insertCursorPositionFnc   = std::string(*)(std::string, const u_int&, const MenuTemplates&, u_short, const u_int&);
+using buttonsReadingFnc		    = u_short(*)(u_int&, u_int&);
+using readingBinaryFileFnc      = void(*)(const std::string, std::list<ExamResults>&, u_int&, u_int&, u_int&);
+using writeInBinaryFileFnc		= void(*)(const std::string&, const u_int&);
+using findElementFnc			= bool(*)(const std::vector<u_int>&, const u_int&);
+using deletingFromBinaryFileFnc = void(*)(const std::string&, std::vector<u_int>&, const u_int&, 
+									findElementFnc, writeInBinaryFileFnc);
+
 
 
 void    CreateRandomBinDataset(std::string dir);
 u_short ButtonsReading(u_int& horPosOut, u_int& vertPosOut);
 void    FindingCursorPosition(u_int& vertPosOut, const u_int& heigh);
 void    FindingCursorPosition(u_int& horPosOut, u_int& vertPosOut, const u_int& length, const u_int& height);
+
 void    ReadingBinaryFile(const std::string dir, std::list<ExamResults>& usersData, u_int& uDataReadIndBegOut,
 			u_int& uDataReadIndCountOut, u_int& uDataCountOut);
-void	WritingInBinaryFile(const std::string dir, const std::list<ExamResults>& usersData, const u_int& dataWriteIndBeg,
-			const u_int& dataWriteIndCount);
+void	WriteInBinaryFile(const std::string& dir, const u_int& subfileCounts);
+bool	FindElement(const std::vector<u_int>& arr, const u_int& el);
+void	DeletingFromBinaryFile(const std::string& dir, std::vector<u_int>& droppedInd, const u_int& dataCount,
+			findElementFnc FindElement, writeInBinaryFileFnc WriteInBinaryFile);
 
 std::string InsertCursorPosition(std::string str, const u_int& vertPos, const MenuTemplates& mTemps,
 	u_short level, const u_int& iterator);
@@ -200,13 +216,13 @@ int main(int argc, char* argv[])
 	setlocale(LC_ALL, "ru");
 
 	string path = "random_data.bin";
-	if (argc > 1){
+	/*if (argc > 1){
 		path = argv[1];
 	}
 	else {
 		cout << "введите путь и название файла: ";
 		getline(cin, path);
-	}
+	}*/
 	//path = "random_data.bin";
 
 
@@ -237,13 +253,15 @@ int main(int argc, char* argv[])
 	};
 
 	list<ExamResults> usersData;
-	u_int userDataViewIndexBegin(NULL), userDataViewIndexCount(NULL);
-	u_int userDataCount(NULL);
+	u_int userDataViewIndexBegin(0), userDataViewIndexCount(0);
+	u_int userDataCount(0);
 	u_int horizontalPos = 1, verticalPos = 1;
 
 	bool exitFlag = true;
-	short codeItem(NULL);
+	short codeItem(0);
 	//ReadingBinaryFile(path, usersData, userDataViewIndexBegin, userDataViewIndexCount, userDataCount);
+	vector<u_int> testDelInd{ 2, 3 };
+	
 	while (exitFlag)
 	{
 		PrintMainMenu(verticalPos, allMenuTemplatse, InsertCursorPosition);
@@ -263,14 +281,15 @@ int main(int argc, char* argv[])
 
 			case ITEM_SEARCH:
 				//SearchItemPrinting();
+				cout << "введите путь и название файла: ";
+				getline(cin, path);
 				break;
 
 			case ITEM_APPEND:
-				//AppendItemPrinting();
+				DeletingFromBinaryFile(path, testDelInd, 8, FindElement, WriteInBinaryFile);
 				break;
 
 			case ITEM_STATISTICS:
-				//StatisticsItemPrinting();
 				break;
 
 			case ITEM_CRATE:
@@ -386,6 +405,9 @@ void FindingCursorPosition(u_int& horPosOut, u_int& vertPosOut, const u_int& len
 	if (horPosOut < HORIZONTAL_BEGIN_POINT) {
 		horPosOut = (length - horPosOut) % (length + 1);
 	}
+	else if (horPosOut > length && length == 1) {
+		horPosOut = length;
+	}
 	else if (horPosOut > length) {
 		horPosOut /= length;
 	}
@@ -406,14 +428,12 @@ void ReadingBinaryFile(const std::string dir, std::list<ExamResults>& usersData,
 {
 	using namespace std;
 
-	ifstream inBinFile(dir, ios_base::binary);
+	ifstream inBinFile(dir, ios::binary);
 	if (!inBinFile) {
 		cerr << "Error opening" << endl;
-		exit(1);
 	}
-
 	ExamResultsBinary dataBuffer = {};
-	uDataCountOut = inBinFile.seekg(NULL, ios::end).tellg() / dataBuffer.writeSize;
+	uDataCountOut = inBinFile.seekg(0, ios::end).tellg() / dataBuffer.writeSize;
 
 	inBinFile.seekg(uDataReadIndBegOut * dataBuffer.writeSize, ios::beg);
 	usersData.clear();
@@ -446,56 +466,139 @@ void ReadingBinaryFile(const std::string dir, std::list<ExamResults>& usersData,
 	//system("pause");
 }
 
-void WritingInBinaryFile(const std::string dir, const std::list<ExamResults>& usersData, const u_int& dataWriteIndBeg,
-	const u_int& dataWriteIndCount)
+void WriteInBinaryFile(const std::string& dir, const u_int& subfileCounts)
 {
 	using namespace std;
 
-	ofstream outBinFile(dir, ios_base::binary);
-	if (!outBinFile) {
-		cerr << "Error opening" << endl;
-		exit(1);
+	ofstream binFile(dir, ios::binary | ios::trunc);
+	binFile.close();
+
+	string dirBuf;
+	u_int subFileSize;
+	ExamResultsBinary confVal;
+	char* dataBuffer = new char[confVal.writeSize];
+
+	for (int i = 0; i < subfileCounts; ++i) {
+		dirBuf = dir.substr(0, dir.length() - 4) + "_buf_"s + to_string(i) + dir.substr(dir.length() - 4, 4);
+		cout << dirBuf << endl;
+
+		ifstream inBufBinFile(dirBuf, ios::binary);
+		subFileSize = inBufBinFile.seekg(0, ios::end).tellg() / confVal.writeSize;
+		inBufBinFile.seekg(0, ios::beg);
+
+		if (subFileSize == 0) {
+			inBufBinFile.close();
+			remove(dirBuf.c_str());
+			continue;
+		}
+
+		ofstream outBinFile(dir, ios::binary | ios::app);
+		if (!outBinFile.is_open()) {
+			cerr << "Error opening" << endl;
+		}
+
+		cout << "subFileSize: " << subFileSize << endl;
+		cout << "outBinFile.fail() " << outBinFile.fail() << endl;
+		cout << "outBinFile.rdstate() " << outBinFile.rdstate() << endl;
+		if (outBinFile.rdstate() == ios::goodbit) {
+			cout << "stream state is goodbit\n";
+		}
+		else if (outBinFile.rdstate() == ios::badbit) {
+			cout << "stream state is badbit\n";
+		}
+		else if (outBinFile.rdstate() == ios::failbit) {
+			cout << "stream state is failbit\n";
+		}
+		else if (outBinFile.rdstate() == ios::eofbit) {
+			cout << "stream state is eofbit\n";
+		}
+		outBinFile.clear();
+
+		for (int j = 0; j < subFileSize; ++j) {
+			inBufBinFile.read(dataBuffer, confVal.writeSize);
+			outBinFile.write(dataBuffer, confVal.writeSize);
+			cout << dataBuffer << endl;
+		}
+		inBufBinFile.close();
+		outBinFile.close();
+		cout << "\n";
+
+		remove(dirBuf.c_str());
 	}
-
-	ExamResultsBinary dataBuffer = {};
-
-	outBinFile.seekp(dataWriteIndBeg * dataBuffer.writeSize, ios::beg);
-
-	auto iter = usersData.begin();
-	for (int i = 0; i < dataWriteIndCount; ++i, ++iter) {
-		strcpy_s(dataBuffer.firstName, LENGTH_FIRST_NAME, iter->firstName.c_str());
-		strcpy_s(dataBuffer.lastName, LENGTH_LAST_NAME, iter->lastName.c_str());
-		dataBuffer.mathScore = iter->mathScore;
-		dataBuffer.ruLangScore = iter->ruLangScore;
-		dataBuffer.enLangScore = iter->enLangScore;
-
-		outBinFile.write(dataBuffer.firstName, sizeof(*dataBuffer.firstName) * LENGTH_FIRST_NAME);
-		outBinFile.write(dataBuffer.lastName, sizeof(*dataBuffer.lastName) * LENGTH_LAST_NAME);
-		outBinFile.write(reinterpret_cast<char*>(&dataBuffer.mathScore), sizeof(dataBuffer.mathScore));
-		outBinFile.write(reinterpret_cast<char*>(&dataBuffer.ruLangScore), sizeof(dataBuffer.ruLangScore));
-		outBinFile.write(reinterpret_cast<char*>(&dataBuffer.enLangScore), sizeof(dataBuffer.enLangScore));
-	}
-	outBinFile.close();
+	//outBinFile.close();
 }
 
-void DeletingFromBinaryFile(const std::string dir, const u_int& dataDeleteIndBeg,
-	const u_int& dataDeleteIndCount)
+void DeletingFromBinaryFile(const std::string& dir, std::vector<u_int>& droppedInd, const u_int& dataCount,
+	findElementFnc FindElement, writeInBinaryFileFnc WriteInBinaryFile)
 {
 	using namespace std;
 
-	ofstream outBinFile(dir, ios_base::binary);
-	if (!outBinFile) {
+	ifstream inBinFile(dir, ios::binary);
+	if (!inBinFile) {
 		cerr << "Error opening" << endl;
-		exit(1);
+	}
+	u_int subfileCounts(0);
+	u_int dataInd(0);
+	u_int subFileSize(SUBFILE_SIZE);
+	string dirBuf;
+	ExamResultsBinary confVal;
+	char *dataBuffer = new char[confVal.writeSize];
+
+
+
+	if (dataCount % SUBFILE_SIZE == 0) {
+		subfileCounts = dataCount / SUBFILE_SIZE;
+	} 
+	else if (dataCount > SUBFILE_SIZE) {
+		subfileCounts = dataCount / SUBFILE_SIZE;
+		++subfileCounts;
+	} else {
+		++subfileCounts;
 	}
 
-	ExamResultsBinary structConf = {};
-	outBinFile.seekp(dataDeleteIndBeg * structConf.writeSize, ios::beg);
 
-	for (int i = 0; i < dataDeleteIndCount; ++i) {
+	for (int i = 0; i < subfileCounts; ++i) {
+		dirBuf = dir.substr(0, dir.length() - 4) + "_buf_"s + to_string(i) + dir.substr(dir.length() - 4, 4);
+		ofstream outFile(dirBuf, ios::binary | ios::trunc);
+		outFile.close();
 
+		if (i == subfileCounts - 1 && dataCount % SUBFILE_SIZE != 0) {
+			subFileSize = dataCount % SUBFILE_SIZE;
+		}
+
+		ofstream outBufBinFile(dirBuf, ios::binary | ios::app);
+		for (int j = 0; j < subFileSize; ++j) {
+			if (dataInd == dataCount) {
+				break;
+			}
+
+			if (!FindElement(droppedInd, dataInd)) {
+				inBinFile.read(dataBuffer, confVal.writeSize);
+				outBufBinFile.write(dataBuffer, confVal.writeSize);
+			} else {
+				inBinFile.seekg(confVal.writeSize, ios::cur);
+			}
+			++dataInd;
+		}
+		outBufBinFile.close();
 	}
-	outBinFile.close();
+	inBinFile.close();
+
+	droppedInd.clear();
+
+	WriteInBinaryFile(dir, subfileCounts);
+
+	system("pause");
+}
+
+bool FindElement(const std::vector<u_int>& arr, const u_int& el)
+{
+	for (int i = 0; i < arr.size(); ++i) {
+		if (el == arr[i]) {
+			return true;
+		}
+	}
+	return false;
 }
 
 std::string InsertCursorPosition(std::string str, const u_int& vertPos, const MenuTemplates& mTemps,
@@ -509,36 +612,36 @@ std::string InsertCursorPosition(std::string str, const u_int& vertPos, const Me
 		{
 		case ITEM_VIEW:
 			if (mTemps.lineView == str) {
-				str.replace(NULL, 1, mTemps.cursor);
+				str.replace(0, 1, mTemps.cursor);
 			}
 			break;
 
 		case ITEM_SEARCH:
 			if (mTemps.lineSearch == str) {
-				str.replace(NULL, 1, mTemps.cursor);
+				str.replace(0, 1, mTemps.cursor);
 			}
 			break;
 
 		case ITEM_APPEND:
 			if (mTemps.lineAppend == str) {
-				str.replace(NULL, 1, mTemps.cursor);
+				str.replace(0, 1, mTemps.cursor);
 			}
 			break;
 
 		case ITEM_STATISTICS:
 			if (mTemps.lineStatistics == str) {
-				str.replace(NULL, 1, mTemps.cursor);
+				str.replace(0, 1, mTemps.cursor);
 			}
 			break;
 
 		case ITEM_CRATE:
 			if (mTemps.lineCreate == str) {
-				str.replace(NULL, 1, mTemps.cursor);
+				str.replace(0, 1, mTemps.cursor);
 			}
 			break;
 		case ITEM_EXIT:
 			if (mTemps.lineExit == str) {
-				str.replace(NULL, 1, mTemps.cursor);
+				str.replace(0, 1, mTemps.cursor);
 			}
 			break;
 		}
@@ -547,12 +650,12 @@ std::string InsertCursorPosition(std::string str, const u_int& vertPos, const Me
 	else if (level == LEVEL_VIEW) {
 		if (iterator == 0) {
 			if ((iterator + 1) == vertPos) {
-				str.replace(NULL, 1, mTemps.cursor);
+				str.replace(0, 1, mTemps.cursor);
 			}
 		}
 		else {
 			if (iterator == vertPos) {
-				str.replace(NULL, 1, mTemps.cursor);
+				str.replace(0, 1, mTemps.cursor);
 			}
 		}
 	}
@@ -587,12 +690,12 @@ void PrintMainMenu(const u_int& vertPos, const MenuTemplates& mTemps, insertCurs
 
 	system("cls");
 
-	cout << insCurPosFnc(mTemps.lineView, vertPos, mTemps, LEVEL_MAIN, NULL) << endl;
-	cout << insCurPosFnc(mTemps.lineSearch, vertPos, mTemps, LEVEL_MAIN, NULL) << endl;
-	cout << insCurPosFnc(mTemps.lineAppend, vertPos, mTemps, LEVEL_MAIN, NULL) << endl;
-	cout << insCurPosFnc(mTemps.lineStatistics, vertPos, mTemps, LEVEL_MAIN, NULL) << endl;
-	cout << insCurPosFnc(mTemps.lineCreate, vertPos, mTemps, LEVEL_MAIN, NULL) << endl;
-	cout << insCurPosFnc(mTemps.lineExit, vertPos, mTemps, LEVEL_MAIN, NULL) << endl;
+	cout << insCurPosFnc(mTemps.lineView, vertPos, mTemps, LEVEL_MAIN, 0) << endl;
+	cout << insCurPosFnc(mTemps.lineSearch, vertPos, mTemps, LEVEL_MAIN, 0) << endl;
+	cout << insCurPosFnc(mTemps.lineAppend, vertPos, mTemps, LEVEL_MAIN, 0) << endl;
+	cout << insCurPosFnc(mTemps.lineStatistics, vertPos, mTemps, LEVEL_MAIN, 0) << endl;
+	cout << insCurPosFnc(mTemps.lineCreate, vertPos, mTemps, LEVEL_MAIN, 0) << endl;
+	cout << insCurPosFnc(mTemps.lineExit, vertPos, mTemps, LEVEL_MAIN, 0) << endl;
 }
 
 void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const MenuTemplates& mTemps,
@@ -609,8 +712,8 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 	readBinFileFnc(dir, usersData, dataIndBeg, dataIndCount, dataCount);
 
 	bool flagExit = false;
-	if (dataCount == NULL) {
-		cout << "файл пустой" << endl;
+	if (dataCount == 0) {
+		cout << "\tФАЙЛ ПУСТОЙ ИЛИ ЕГО НЕ СУЩЕСТВУЕТ!" << endl;
 		system("pause");
 		flagExit = true;
 	}
@@ -619,8 +722,8 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 	u_int vertPos = 1;
 
 	u_short codeState;
-	u_int   prevHorPos(NULL);
-	u_int   dataPageCount(NULL);
+	u_int   prevHorPos(0);
+	u_int   dataPageCount(0);
 
 	auto uData = usersData.begin();
 	
@@ -651,14 +754,14 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 			// чтение среза данных
 			readBinFileFnc(dir, usersData, dataIndBeg, dataIndCount, dataCount);
 
-			if (dataCount == NULL) {
+			if (dataCount == 0) {
 				cout << "файл пустой" << endl;
 				system("pause");
 				flagExit = true;
 			}
 
 			// нахождение количества страниц
-			if (dataCount % DATA_FIELD_LENGTH == NULL) {
+			if (dataCount % DATA_FIELD_LENGTH == 0) {
 				dataPageCount = dataCount / DATA_FIELD_LENGTH;
 			}
 			else if (dataCount > DATA_FIELD_LENGTH) {
@@ -739,8 +842,8 @@ void PrintCrateItem(std::string& dir, std::list<ExamResults>& userData, const Me
 	{
 		system("cls");
 		cout << "создать новый файл?" << endl;
-		cout << insCurPosFnc(mTemps.appLineYes, vertPos, mTemps, LEVEL_APPEND, NULL) << endl;
-		cout << insCurPosFnc(mTemps.appLineNo, vertPos, mTemps, LEVEL_APPEND, NULL) << endl;
+		cout << insCurPosFnc(mTemps.appLineYes, vertPos, mTemps, LEVEL_APPEND, 0) << endl;
+		cout << insCurPosFnc(mTemps.appLineNo, vertPos, mTemps, LEVEL_APPEND, 0) << endl;
 
 		codeState = buttReadFnc(horPos, vertPos);
 		findCurPosFnc(vertPos, HEIGHT_ITEM_APPEND);
