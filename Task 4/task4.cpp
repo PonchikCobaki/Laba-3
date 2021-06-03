@@ -110,7 +110,7 @@ enum IndexConst {
 };
 
 enum DataBuffersSize {
-	SUBFILE_SIZE = 2, // размер под файлов для удаления/изменения данных
+	SUBFILE_SIZE = 100, // размер под файлов для удаления/изменения данных
 };
 
 #pragma pack(1)
@@ -260,7 +260,7 @@ int main(int argc, char* argv[])
 	bool exitFlag = true;
 	short codeItem(0);
 	//ReadingBinaryFile(path, usersData, userDataViewIndexBegin, userDataViewIndexCount, userDataCount);
-	vector<u_int> testDelInd{ 2, 3 };
+	vector<u_int> testDelInd{ 0, 1, 2, 3, 4, 1351 };
 	
 	while (exitFlag)
 	{
@@ -286,7 +286,7 @@ int main(int argc, char* argv[])
 				break;
 
 			case ITEM_APPEND:
-				DeletingFromBinaryFile(path, testDelInd, 8, FindElement, WriteInBinaryFile);
+				DeletingFromBinaryFile(path, testDelInd, 1352, FindElement, WriteInBinaryFile);
 				break;
 
 			case ITEM_STATISTICS:
@@ -470,6 +470,7 @@ void WriteInBinaryFile(const std::string& dir, const u_int& subfileCounts)
 {
 	using namespace std;
 
+	// очистка файла
 	ofstream binFile(dir, ios::binary | ios::trunc);
 	binFile.close();
 
@@ -478,14 +479,18 @@ void WriteInBinaryFile(const std::string& dir, const u_int& subfileCounts)
 	ExamResultsBinary confVal;
 	char* dataBuffer = new char[confVal.writeSize];
 
+	// // запись данных в основной файл из подфайлов
 	for (int i = 0; i < subfileCounts; ++i) {
 		dirBuf = dir.substr(0, dir.length() - 4) + "_buf_"s + to_string(i) + dir.substr(dir.length() - 4, 4);
+		
 		cout << dirBuf << endl;
 
+		// определение размера подфайла
 		ifstream inBufBinFile(dirBuf, ios::binary);
 		subFileSize = inBufBinFile.seekg(0, ios::end).tellg() / confVal.writeSize;
 		inBufBinFile.seekg(0, ios::beg);
 
+		// пропуск итерации в случае открытия пустого файла
 		if (subFileSize == 0) {
 			inBufBinFile.close();
 			remove(dirBuf.c_str());
@@ -514,6 +519,7 @@ void WriteInBinaryFile(const std::string& dir, const u_int& subfileCounts)
 		}
 		outBinFile.clear();
 
+		// запись
 		for (int j = 0; j < subFileSize; ++j) {
 			inBufBinFile.read(dataBuffer, confVal.writeSize);
 			outBinFile.write(dataBuffer, confVal.writeSize);
@@ -523,72 +529,8 @@ void WriteInBinaryFile(const std::string& dir, const u_int& subfileCounts)
 		outBinFile.close();
 		cout << "\n";
 
-		remove(dirBuf.c_str());
+		remove(dirBuf.c_str());	// удаление подфайла
 	}
-	//outBinFile.close();
-}
-
-void DeletingFromBinaryFile(const std::string& dir, std::vector<u_int>& droppedInd, const u_int& dataCount,
-	findElementFnc FindElement, writeInBinaryFileFnc WriteInBinaryFile)
-{
-	using namespace std;
-
-	ifstream inBinFile(dir, ios::binary);
-	if (!inBinFile) {
-		cerr << "Error opening" << endl;
-	}
-	u_int subfileCounts(0);
-	u_int dataInd(0);
-	u_int subFileSize(SUBFILE_SIZE);
-	string dirBuf;
-	ExamResultsBinary confVal;
-	char *dataBuffer = new char[confVal.writeSize];
-
-
-
-	if (dataCount % SUBFILE_SIZE == 0) {
-		subfileCounts = dataCount / SUBFILE_SIZE;
-	} 
-	else if (dataCount > SUBFILE_SIZE) {
-		subfileCounts = dataCount / SUBFILE_SIZE;
-		++subfileCounts;
-	} else {
-		++subfileCounts;
-	}
-
-
-	for (int i = 0; i < subfileCounts; ++i) {
-		dirBuf = dir.substr(0, dir.length() - 4) + "_buf_"s + to_string(i) + dir.substr(dir.length() - 4, 4);
-		ofstream outFile(dirBuf, ios::binary | ios::trunc);
-		outFile.close();
-
-		if (i == subfileCounts - 1 && dataCount % SUBFILE_SIZE != 0) {
-			subFileSize = dataCount % SUBFILE_SIZE;
-		}
-
-		ofstream outBufBinFile(dirBuf, ios::binary | ios::app);
-		for (int j = 0; j < subFileSize; ++j) {
-			if (dataInd == dataCount) {
-				break;
-			}
-
-			if (!FindElement(droppedInd, dataInd)) {
-				inBinFile.read(dataBuffer, confVal.writeSize);
-				outBufBinFile.write(dataBuffer, confVal.writeSize);
-			} else {
-				inBinFile.seekg(confVal.writeSize, ios::cur);
-			}
-			++dataInd;
-		}
-		outBufBinFile.close();
-	}
-	inBinFile.close();
-
-	droppedInd.clear();
-
-	WriteInBinaryFile(dir, subfileCounts);
-
-	system("pause");
 }
 
 bool FindElement(const std::vector<u_int>& arr, const u_int& el)
@@ -599,6 +541,160 @@ bool FindElement(const std::vector<u_int>& arr, const u_int& el)
 		}
 	}
 	return false;
+}
+
+void DeletingFromBinaryFile(const std::string& dir, std::vector<u_int>& droppedInd, const u_int& dataCount,
+		findElementFnc FindElement, writeInBinaryFileFnc WriteInBinaryFile)
+{
+	using namespace std;
+
+	// преременные для работы с подфайлом
+	u_int subFileCounts(0);
+	u_int subFileSize(SUBFILE_SIZE);
+	string dirBuf;
+
+	// преременные для работы с данными
+	ExamResultsBinary confVal;
+	char *dataBuffer = new char[confVal.writeSize];
+	u_int dataInd(0);
+
+	// расчёт кол-ва подфайлов
+	if (dataCount % SUBFILE_SIZE == 0) {
+		subFileCounts = dataCount / SUBFILE_SIZE;
+	} 
+	else if (dataCount > SUBFILE_SIZE) {
+		subFileCounts = dataCount / SUBFILE_SIZE;
+		++subFileCounts;
+	} else {
+		++subFileCounts;
+	}
+
+	ifstream inBinFile(dir, ios::binary);
+	if (!inBinFile) {
+		cerr << "Error opening" << endl;
+	}
+
+	// запись данных в подфайлы
+	for (int i = 0; i < subFileCounts; ++i) {
+		dirBuf = dir.substr(0, dir.length() - 4) + "_buf_"s + to_string(i) + dir.substr(dir.length() - 4, 4);
+
+		// очистка подфайла, если он уже существует
+		ofstream outFile(dirBuf, ios::binary | ios::trunc);
+		outFile.close();
+
+		// расчёт размера подфайла
+		if (i == subFileCounts - 1 && dataCount % SUBFILE_SIZE != 0) {
+			subFileSize = dataCount % SUBFILE_SIZE;
+		}
+
+		// запись данных в подфайл
+		ofstream outBufBinFile(dirBuf, ios::binary | ios::app);
+		for (int j = 0; j < subFileSize; ++j) {
+			// удаление элемента, путем пропуска его записи в подфайл
+			if (!FindElement(droppedInd, dataInd)) {
+				inBinFile.read(dataBuffer, confVal.writeSize);
+				outBufBinFile.write(dataBuffer, confVal.writeSize);
+			} else {
+				inBinFile.seekg(confVal.writeSize, ios::cur);	// пропуск чтения основного файла
+			}
+			++dataInd;	// увличение абсолютного индекса всех данных
+		}
+		
+		outBufBinFile.close();
+	}
+	inBinFile.close();
+
+	droppedInd.clear();
+
+	// запись в основной файл изменённых данных
+	WriteInBinaryFile(dir, subFileCounts);
+
+	system("pause");
+}
+
+void ChangeDataInBinaryFile(const std::string& dir, std::vector<u_int>& changeInd, const u_int& dataCount, 
+		std::list<ExamResults>& usersData, findElementFnc FindElement, writeInBinaryFileFnc WriteInBinaryFile) 
+{
+	using namespace std;
+
+	// преременные для работы с подфайлом
+	u_int subFileCounts(0);
+	u_int subFileSize(SUBFILE_SIZE);
+	string dirBuf;
+
+	// преременные для работы с данными
+	ExamResultsBinary uDataBin;
+	char* dataBuffer = new char[uDataBin.writeSize];
+	u_int dataInd(0);
+	auto uData = usersData.begin();
+
+	// расчёт кол-ва подфайлов
+	if (dataCount % SUBFILE_SIZE == 0) {
+		subFileCounts = dataCount / SUBFILE_SIZE;
+	}
+	else if (dataCount > SUBFILE_SIZE) {
+		subFileCounts = dataCount / SUBFILE_SIZE;
+		++subFileCounts;
+	}
+	else {
+		++subFileCounts;
+	}
+
+	ifstream inBinFile(dir, ios::binary);
+	if (!inBinFile) {
+		cerr << "Error opening" << endl;
+	}
+
+	// запись данных в подфайлы
+	for (int i = 0; i < subFileCounts; ++i) {
+		dirBuf = dir.substr(0, dir.length() - 4) + "_buf_"s + to_string(i) + dir.substr(dir.length() - 4, 4);
+
+		// очистка подфайла, если он уже существует
+		ofstream outFile(dirBuf, ios::binary | ios::trunc);
+		outFile.close();
+
+		// расчёт размера подфайла
+		if (i == subFileCounts - 1 && dataCount % SUBFILE_SIZE != 0) {
+			subFileSize = dataCount % SUBFILE_SIZE;
+		}
+
+		// запись в подфайл
+		ofstream outBufBinFile(dirBuf, ios::binary | ios::app);
+		for (int j = 0; j < subFileSize; ++j) {
+			// изменение элемента
+			if (!FindElement(changeInd, dataInd)) {
+				inBinFile.read(dataBuffer, uDataBin.writeSize);
+				outBufBinFile.write(dataBuffer, uDataBin.writeSize);
+			} else {
+				inBinFile.seekg(uDataBin.writeSize, ios::cur);
+
+				// копирование данных в структуру для записи
+				strcpy_s(uDataBin.firstName, LENGTH_FIRST_NAME, uData->firstName.c_str());
+				strcpy_s(uDataBin.lastName, LENGTH_LAST_NAME, uData->lastName.c_str());
+				uDataBin.mathScore = uData->mathScore;
+				uDataBin.ruLangScore = uData->ruLangScore;
+				uDataBin.enLangScore = uData->enLangScore;
+
+				// запись структуры
+				outBufBinFile.write(uDataBin.firstName, sizeof(*uDataBin.lastName) * LENGTH_FIRST_NAME);
+				outBufBinFile.write(uDataBin.lastName, sizeof(*uDataBin.firstName) * LENGTH_LAST_NAME);
+				outBufBinFile.write((char*)&uDataBin.mathScore, sizeof(uDataBin.mathScore));
+				outBufBinFile.write((char*)&uDataBin.ruLangScore, sizeof(uDataBin.ruLangScore));
+				outBufBinFile.write((char*)&uDataBin.enLangScore, sizeof(uDataBin.enLangScore));
+			}
+			++dataInd; // увличение абсолютного индекса всех данных
+			++uData;   // изменение указателя контейнера
+		}
+		
+		outBufBinFile.close();
+	}
+	inBinFile.close();
+	changeInd.clear();
+
+	// запись в основной файл изменённых данных
+	WriteInBinaryFile(dir, subFileCounts);
+
+	system("pause");
 }
 
 std::string InsertCursorPosition(std::string str, const u_int& vertPos, const MenuTemplates& mTemps,
@@ -726,10 +822,12 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 	u_int   dataPageCount(0);
 
 	auto uData = usersData.begin();
-	
-	// проверка длины среза данных
-	if ((dataIndBeg + dataIndCount - IND_CONV_FACTOR) > (dataCount - IND_CONV_FACTOR)) {
-		dataIndCount = dataCount - dataIndBeg;
+	//u_int sliceIndBeg(0);
+	//u_int sliceIndEnd(SUBFILE_SIZE - 1);
+
+	// проверка конца среза на выход из контенера
+	if ((dataIndBeg + dataIndCount) > (dataCount)) {
+		dataIndCount = dataCount - dataIndBeg; // изменение размера кол-ва элементов среза
 	}
 
 	stringstream dataBuffer;
@@ -776,8 +874,9 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 		}
 		prevHorPos = horPos;
 
-		// установка индекса итератора локального контейнера с срезом данных
+		// установка индекса итератора контейнера с срезом данных
 		uData = usersData.begin();
+		//advance(uData, )
 
 		// заполнение промежуточного потока для вывода таблицы
 		dataBuffer << mTemps.tableSeparatorHorizontal << "\n" << mTemps.tableHeader << "\n" << mTemps.tableSeparatorHorizontal << "\n";
