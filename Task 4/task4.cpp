@@ -110,7 +110,7 @@ enum IndexConst {
 };
 
 enum DataBuffersSize {
-	SUBFILE_SIZE = 100, // размер под файлов для удаления/изменения данных
+	SUBFILE_SIZE = 7 * DATA_FIELD_LENGTH, // 98 размер под файлов для удаления/изменения данных
 };
 
 #pragma pack(1)
@@ -165,15 +165,23 @@ static struct ExamResultsBinary {
 
 
 
-using findingCursorPositionFnc1 = void(*)(u_int&, const u_int&);
-using findingCursorPositionFnc2 = void(*)(u_int&, u_int&, const u_int&, const u_int&);
-using insertCursorPositionFnc   = std::string(*)(std::string, const u_int&, const MenuTemplates&, u_short, const u_int&);
-using buttonsReadingFnc		    = u_short(*)(u_int&, u_int&);
-using readingBinaryFileFnc      = void(*)(const std::string, std::list<ExamResults>&, u_int&, u_int&, u_int&);
-using writeInBinaryFileFnc		= void(*)(const std::string&, const u_int&);
-using findElementFnc			= bool(*)(const std::vector<u_int>&, const u_int&);
-using deletingFromBinaryFileFnc = void(*)(const std::string&, std::vector<u_int>&, const u_int&, 
-									findElementFnc, writeInBinaryFileFnc);
+using buttonsReadingFnc			= u_short(*)(u_int& horPosOut, u_int& vertPosOut);
+using findingCursorPositionFnc1 = void(*)(u_int& vertPosOut, const u_int& heigh);
+using findingCursorPositionFnc2 = void(*)(u_int& horPosOut, u_int& vertPosOut, const u_int& length, const u_int& height);
+
+
+using readingBinaryFileFnc      = void(*)(const std::string dir, std::list<ExamResults>& usersData, const u_int& uDataReadIndBegOut,
+									const u_int& uDataReadIndCountOut, u_int& uDataCountOut);
+using writeInBinaryFileFnc		= void(*)(const std::string& dir, const u_int& subfileCounts);
+using findElementFnc			= bool(*)(const std::vector<u_int>& arr, const u_int& el);
+using deletingFromBinaryFileFnc = void(*)(const std::string& dir, const u_int& droppedInd,
+									const u_int& dataCount, writeInBinaryFileFnc writeInBinFileFnc);
+using changeDataInBinaryFileFnc = void(*)(const std::string& dir, const u_int& changeInd, const u_int& dataCount,
+									std::list<ExamResults>& usersData, writeInBinaryFileFnc writeInBinFile);
+
+
+using insertCursorPositionFnc	= std::string(*)(std::string str, const u_int& vertPos, const MenuTemplates& mTemps,
+									u_short level, const u_int& iterator);
 
 
 
@@ -182,21 +190,24 @@ u_short ButtonsReading(u_int& horPosOut, u_int& vertPosOut);
 void    FindingCursorPosition(u_int& vertPosOut, const u_int& heigh);
 void    FindingCursorPosition(u_int& horPosOut, u_int& vertPosOut, const u_int& length, const u_int& height);
 
-void    ReadingBinaryFile(const std::string dir, std::list<ExamResults>& usersData, u_int& uDataReadIndBegOut,
-			u_int& uDataReadIndCountOut, u_int& uDataCountOut);
+
+void    ReadingBinaryFile(const std::string dir, std::list<ExamResults>& usersData, const u_int& uDataReadIndBegOut,
+			const u_int& uDataReadIndCountOut, u_int& uDataCountOut);
 void	WriteInBinaryFile(const std::string& dir, const u_int& subfileCounts);
 bool	FindElement(const std::vector<u_int>& arr, const u_int& el);
-void	DeletingFromBinaryFile(const std::string& dir, std::vector<u_int>& droppedInd, const u_int& dataCount,
-			findElementFnc FindElement, writeInBinaryFileFnc WriteInBinaryFile);
+void	DeletingFromBinaryFile(const std::string& dir, const u_int& droppedInd,
+			const u_int& dataCount, writeInBinaryFileFnc writeInBinFileFnc);
+void	ChangeDataInBinaryFile(const std::string& dir, const u_int& changeInd, const u_int& dataCount,
+			std::list<ExamResults>& usersData, writeInBinaryFileFnc writeInBinFile);
+
 
 std::string InsertCursorPosition(std::string str, const u_int& vertPos, const MenuTemplates& mTemps,
 	u_short level, const u_int& iterator);
-
-void PrintMainMenu(const u_int& vertPos, const MenuTemplates& mTemps, insertCursorPositionFnc insCurPosFnc);
-void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const MenuTemplates& mTemps,
-		u_int& dataIndBeg, u_int& dataIndCount, u_int& dataCount,
-		insertCursorPositionFnc insCurPosFnc, buttonsReadingFnc buttReadFnc,
-		findingCursorPositionFnc2 findCurPosFnc, readingBinaryFileFnc readBinFileFnc);
+void		PrintMainMenu(const u_int& vertPos, const MenuTemplates& mTemps, insertCursorPositionFnc insCurPosFnc);
+void		PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const MenuTemplates& mTemps,
+				insertCursorPositionFnc insCurPosFnc, buttonsReadingFnc buttReadFnc, findingCursorPositionFnc2 findCurPosFnc,
+				readingBinaryFileFnc readBinFileFnc, writeInBinaryFileFnc writeInBinFileFnc,
+				deletingFromBinaryFileFnc delFromBinFileFnc, changeDataInBinaryFileFnc changeInBinFileFnc);
 //
 //void PrintSearchItem();
 //
@@ -204,8 +215,9 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 //
 //void PrintStatisticsItem();
 //
-void PrintCrateItem(std::string& dir, std::list<ExamResults>& userData, const MenuTemplates& mTemps, u_int& horPos,
-	u_int& vertPos, insertCursorPositionFnc insCurPosFnc, buttonsReadingFnc buttReadFnc, findingCursorPositionFnc1 findCurPosFnc);
+void		PrintCrateItem(std::string& dir, std::list<ExamResults>& userData, const MenuTemplates& mTemps,
+				u_int& horPos, u_int& vertPos, insertCursorPositionFnc insCurPosFnc,
+				buttonsReadingFnc buttReadFnc, findingCursorPositionFnc1 findCurPosFnc);
 
 
 
@@ -253,14 +265,11 @@ int main(int argc, char* argv[])
 	};
 
 	list<ExamResults> usersData;
-	u_int userDataViewIndexBegin(0), userDataViewIndexCount(0);
-	u_int userDataCount(0);
 	u_int horizontalPos = 1, verticalPos = 1;
 
 	bool exitFlag = true;
 	short codeItem(0);
 	//ReadingBinaryFile(path, usersData, userDataViewIndexBegin, userDataViewIndexCount, userDataCount);
-	vector<u_int> testDelInd{ 0, 1, 2, 3, 4, 1351 };
 	
 	while (exitFlag)
 	{
@@ -273,10 +282,11 @@ int main(int argc, char* argv[])
 			switch (verticalPos)
 			{
 			case ITEM_VIEW:
-				PrintViewItem(path, usersData, allMenuTemplatse, userDataViewIndexBegin,
-					userDataViewIndexCount, userDataCount,
+				PrintViewItem(path, usersData, allMenuTemplatse,
 					InsertCursorPosition, ButtonsReading,
-					FindingCursorPosition, ReadingBinaryFile);
+					FindingCursorPosition, ReadingBinaryFile, 
+					WriteInBinaryFile, DeletingFromBinaryFile,
+					ChangeDataInBinaryFile);
 				break;
 
 			case ITEM_SEARCH:
@@ -286,7 +296,7 @@ int main(int argc, char* argv[])
 				break;
 
 			case ITEM_APPEND:
-				DeletingFromBinaryFile(path, testDelInd, 1352, FindElement, WriteInBinaryFile);
+				
 				break;
 
 			case ITEM_STATISTICS:
@@ -423,37 +433,60 @@ void FindingCursorPosition(u_int& horPosOut, u_int& vertPosOut, const u_int& len
 	}
 }
 
-void ReadingBinaryFile(const std::string dir, std::list<ExamResults>& usersData, u_int& uDataReadIndBegOut,
-	u_int& uDataReadIndCountOut, u_int& uDataCountOut)
+void ReadingBinaryFile(const std::string dir, std::list<ExamResults>& usersData, const u_int& dataReadIndBeg,
+	const u_int& dataReadIndCount, u_int& dataCountOut)
 {
 	using namespace std;
 
+	// открытие файла
 	ifstream inBinFile(dir, ios::binary);
 	if (!inBinFile) {
 		cerr << "Error opening" << endl;
 	}
+
 	ExamResultsBinary dataBuffer = {};
-	uDataCountOut = inBinFile.seekg(0, ios::end).tellg() / dataBuffer.writeSize;
 
-	inBinFile.seekg(uDataReadIndBegOut * dataBuffer.writeSize, ios::beg);
+
+	// создание нового среза
 	usersData.clear();
-	usersData.resize(uDataReadIndCountOut);
+	usersData.resize(dataReadIndCount);
 
-	auto iter = usersData.begin();
-	for (int i = 0; i < uDataReadIndCountOut; ++i, ++iter) {
+	auto userData = usersData.begin();
+	for (u_int i = 0; i < dataReadIndCount; ++i, ++userData) {
+	/*	cout << "outBinFile.fail() " << inBinFile.fail() << endl;
+		cout << "outBinFile.rdstate() " << inBinFile.rdstate() << endl;
+		if (inBinFile.rdstate() == ios::goodbit) {
+			cout << "stream state is goodbit\n";
+		}
+		else if (inBinFile.rdstate() == ios::badbit) {
+			cout << "stream state is badbit\n";
+		}
+		else if (inBinFile.rdstate() == ios::failbit) {
+			cout << "stream state is failbit\n";
+		}
+		else if (inBinFile.rdstate() == ios::eofbit) {
+			cout << "stream state is eofbit\n";
+		}*/
+		// чтение в структуру-буффер для бинарного файла
 		inBinFile.read(dataBuffer.firstName, sizeof(*dataBuffer.firstName) * LENGTH_FIRST_NAME);
 		inBinFile.read(dataBuffer.lastName, sizeof(*dataBuffer.lastName) * LENGTH_LAST_NAME);
 		inBinFile.read(reinterpret_cast<char*>(&dataBuffer.mathScore), sizeof(dataBuffer.mathScore));
 		inBinFile.read(reinterpret_cast<char*>(&dataBuffer.ruLangScore), sizeof(dataBuffer.ruLangScore));
 		inBinFile.read(reinterpret_cast<char*>(&dataBuffer.enLangScore), sizeof(dataBuffer.enLangScore));
 		
-		iter->firstName = string(dataBuffer.firstName);
-		iter->lastName = string(dataBuffer.lastName);
-		iter->mathScore = dataBuffer.mathScore;
-		iter->ruLangScore = dataBuffer.ruLangScore;
-		iter->enLangScore = dataBuffer.enLangScore;
-		iter->totalScore = iter->mathScore + iter->ruLangScore + iter->enLangScore;
+		// запись в срез структуры
+		userData->firstName = string(dataBuffer.firstName);
+		userData->lastName = string(dataBuffer.lastName);
+		userData->mathScore = dataBuffer.mathScore;
+		userData->ruLangScore = dataBuffer.ruLangScore;
+		userData->enLangScore = dataBuffer.enLangScore;
+		userData->totalScore = userData->mathScore + userData->ruLangScore + userData->enLangScore;
 	}
+
+	// чтение кол-ва данных
+	dataCountOut = inBinFile.seekg(0, ios::end).tellg() / dataBuffer.writeSize;
+	inBinFile.seekg(dataReadIndBeg * dataBuffer.writeSize, ios::beg);
+
 	inBinFile.close();
 
 	//int count = 0;
@@ -474,16 +507,14 @@ void WriteInBinaryFile(const std::string& dir, const u_int& subfileCounts)
 	ofstream binFile(dir, ios::binary | ios::trunc);
 	binFile.close();
 
-	string dirBuf;
-	u_int subFileSize;
+	string	dirBuf;
+	u_int	subFileSize;
 	ExamResultsBinary confVal;
 	char* dataBuffer = new char[confVal.writeSize];
 
 	// // запись данных в основной файл из подфайлов
-	for (int i = 0; i < subfileCounts; ++i) {
+	for (u_int i = 0; i < subfileCounts; ++i) {
 		dirBuf = dir.substr(0, dir.length() - 4) + "_buf_"s + to_string(i) + dir.substr(dir.length() - 4, 4);
-		
-		cout << dirBuf << endl;
 
 		// определение размера подфайла
 		ifstream inBufBinFile(dirBuf, ios::binary);
@@ -500,9 +531,10 @@ void WriteInBinaryFile(const std::string& dir, const u_int& subfileCounts)
 		ofstream outBinFile(dir, ios::binary | ios::app);
 		if (!outBinFile.is_open()) {
 			cerr << "Error opening" << endl;
+			system("pause");
 		}
 
-		cout << "subFileSize: " << subFileSize << endl;
+		/*cout << "subFileSize: " << subFileSize << endl;
 		cout << "outBinFile.fail() " << outBinFile.fail() << endl;
 		cout << "outBinFile.rdstate() " << outBinFile.rdstate() << endl;
 		if (outBinFile.rdstate() == ios::goodbit) {
@@ -516,42 +548,31 @@ void WriteInBinaryFile(const std::string& dir, const u_int& subfileCounts)
 		}
 		else if (outBinFile.rdstate() == ios::eofbit) {
 			cout << "stream state is eofbit\n";
-		}
+		}*/
 		outBinFile.clear();
 
 		// запись
 		for (int j = 0; j < subFileSize; ++j) {
 			inBufBinFile.read(dataBuffer, confVal.writeSize);
 			outBinFile.write(dataBuffer, confVal.writeSize);
-			cout << dataBuffer << endl;
 		}
 		inBufBinFile.close();
 		outBinFile.close();
-		cout << "\n";
+		//cout << "\n";
 
 		remove(dirBuf.c_str());	// удаление подфайла
 	}
 }
 
-bool FindElement(const std::vector<u_int>& arr, const u_int& el)
-{
-	for (int i = 0; i < arr.size(); ++i) {
-		if (el == arr[i]) {
-			return true;
-		}
-	}
-	return false;
-}
-
-void DeletingFromBinaryFile(const std::string& dir, std::vector<u_int>& droppedInd, const u_int& dataCount,
-		findElementFnc FindElement, writeInBinaryFileFnc WriteInBinaryFile)
+void DeletingFromBinaryFile(const std::string& dir, const u_int& droppedInd,
+		const u_int& dataCount, writeInBinaryFileFnc writeInBinFileFnc)
 {
 	using namespace std;
 
 	// преременные для работы с подфайлом
-	u_int subFileCounts(0);
-	u_int subFileSize(SUBFILE_SIZE);
-	string dirBuf;
+	u_int	subFileCounts(0);
+	u_int	subFileSize(SUBFILE_SIZE);
+	string	dirBuf;
 
 	// преременные для работы с данными
 	ExamResultsBinary confVal;
@@ -572,11 +593,13 @@ void DeletingFromBinaryFile(const std::string& dir, std::vector<u_int>& droppedI
 	ifstream inBinFile(dir, ios::binary);
 	if (!inBinFile) {
 		cerr << "Error opening" << endl;
+		system("pause");
 	}
 
 	// запись данных в подфайлы
 	for (int i = 0; i < subFileCounts; ++i) {
-		dirBuf = dir.substr(0, dir.length() - 4) + "_buf_"s + to_string(i) + dir.substr(dir.length() - 4, 4);
+		dirBuf = dir.substr(0, dir.length() - 4) + "_buf_"s + to_string(i)
+			+ dir.substr(dir.length() - 4, 4);
 
 		// очистка подфайла, если он уже существует
 		ofstream outFile(dirBuf, ios::binary | ios::trunc);
@@ -591,7 +614,7 @@ void DeletingFromBinaryFile(const std::string& dir, std::vector<u_int>& droppedI
 		ofstream outBufBinFile(dirBuf, ios::binary | ios::app);
 		for (int j = 0; j < subFileSize; ++j) {
 			// удаление элемента, путем пропуска его записи в подфайл
-			if (!FindElement(droppedInd, dataInd)) {
+			if (droppedInd != dataInd) {
 				inBinFile.read(dataBuffer, confVal.writeSize);
 				outBufBinFile.write(dataBuffer, confVal.writeSize);
 			} else {
@@ -604,23 +627,21 @@ void DeletingFromBinaryFile(const std::string& dir, std::vector<u_int>& droppedI
 	}
 	inBinFile.close();
 
-	droppedInd.clear();
 
 	// запись в основной файл изменённых данных
-	WriteInBinaryFile(dir, subFileCounts);
+	writeInBinFileFnc(dir, subFileCounts);
 
-	system("pause");
 }
 
-void ChangeDataInBinaryFile(const std::string& dir, std::vector<u_int>& changeInd, const u_int& dataCount, 
-		std::list<ExamResults>& usersData, findElementFnc FindElement, writeInBinaryFileFnc WriteInBinaryFile) 
+void ChangeDataInBinaryFile(const std::string& dir, const u_int& changeInd, const u_int& dataCount, 
+		std::list<ExamResults>& usersData, writeInBinaryFileFnc writeInBinFile)
 {
 	using namespace std;
 
 	// преременные для работы с подфайлом
-	u_int subFileCounts(0);
-	u_int subFileSize(SUBFILE_SIZE);
-	string dirBuf;
+	u_int	subFileCounts(0);
+	u_int	subFileSize(SUBFILE_SIZE);
+	string	dirBuf;
 
 	// преременные для работы с данными
 	ExamResultsBinary uDataBin;
@@ -662,7 +683,7 @@ void ChangeDataInBinaryFile(const std::string& dir, std::vector<u_int>& changeIn
 		ofstream outBufBinFile(dirBuf, ios::binary | ios::app);
 		for (int j = 0; j < subFileSize; ++j) {
 			// изменение элемента
-			if (!FindElement(changeInd, dataInd)) {
+			if (changeInd != dataInd) {
 				inBinFile.read(dataBuffer, uDataBin.writeSize);
 				outBufBinFile.write(dataBuffer, uDataBin.writeSize);
 			} else {
@@ -689,10 +710,9 @@ void ChangeDataInBinaryFile(const std::string& dir, std::vector<u_int>& changeIn
 		outBufBinFile.close();
 	}
 	inBinFile.close();
-	changeInd.clear();
 
 	// запись в основной файл изменённых данных
-	WriteInBinaryFile(dir, subFileCounts);
+	writeInBinFile(dir, subFileCounts);
 
 	system("pause");
 }
@@ -794,68 +814,156 @@ void PrintMainMenu(const u_int& vertPos, const MenuTemplates& mTemps, insertCurs
 	cout << insCurPosFnc(mTemps.lineExit, vertPos, mTemps, LEVEL_MAIN, 0) << endl;
 }
 
-void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const MenuTemplates& mTemps,
-		u_int& dataIndBeg, u_int& dataIndCount, u_int& dataCount,
+void DataTablePrint(std::string dir, std::list<ExamResults>& usersData, u_int& dataPage,
+		u_int& vertPos, const MenuTemplates& mTemps,
 		insertCursorPositionFnc insCurPosFnc, buttonsReadingFnc buttReadFnc,
 		findingCursorPositionFnc2 findCurPosFnc, readingBinaryFileFnc readBinFileFnc)
 {
+	/*
+	принцип чтения и вывода данных из файла
+
+		data slice
+		___________
+	ind 0 1 2 3 4 5 6 7 8 9 10 11 12 13} данные в исходном файле
+	val 2 2 2 2 2 2 2 2 2 2 22 22 22 22}
+	   |-----      |
+		view
+
+					  data slice
+					_____________
+	ind 0 1 2 3 4 5 6 7 8 9 10 11 12 13} данные в исходном файле
+	val 2 2 2 2 2 2 2 2 2 2 22 22 22 22}
+				   |	  -------|
+							view
+
+								data slice
+								  _____
+	ind 0 1 2 3 4 5 6 7 8 9 10 11 12 13 } данные в исходном файле
+	val 2 2 2 2 2 2 2 2 2 2 22 22 22 22 }
+								 |-----|
+								  view
+
+	data slice - срез данных хранящихся в локально в оперативной памяти
+	view - дынные выводимые на экран из диапазона data slice
+
+	data slice кратно view
+	*/
+
+
 	using namespace std;
 
 	system("cls");
 
-
+	u_int dataCount(0);
 	// чтение учетных записей
-	readBinFileFnc(dir, usersData, dataIndBeg, dataIndCount, dataCount);
+	readBinFileFnc(dir, usersData, dataCount, dataCount, dataCount);	// чтение кол-ва данных
 
-	bool flagExit = false;
+	bool exitFlag = false;
 	if (dataCount == 0) {
-		cout << "\tФАЙЛ ПУСТОЙ ИЛИ ЕГО НЕ СУЩЕСТВУЕТ!" << endl;
+		cerr << "\tФАЙЛ ПУСТОЙ ИЛИ ЕГО НЕ СУЩЕСТВУЕТ!" << endl;
 		system("pause");
-		flagExit = true;
+		exitFlag = true;
 	}
 
-	u_int horPos = 1;
-	u_int vertPos = 1;
+	u_int   prevDataPage(0);
+	u_int   dataPageCount(2);
+	u_int	dataViewIndBeg(0);
+	u_int	dataViewIndCount(DATA_FIELD_LENGTH);
 
-	u_short codeState;
-	u_int   prevHorPos(0);
-	u_int   dataPageCount(0);
+	auto	uData = usersData.begin();
+	u_int	uIndex;
+	u_int	sliceIndBeg(0);
+	u_int	sliceIndCount(0);
+	u_int	sliceCur(0);
+	u_int	sliceCounts(0);
 
-	auto uData = usersData.begin();
-	//u_int sliceIndBeg(0);
-	//u_int sliceIndEnd(SUBFILE_SIZE - 1);
+	// расчёт кол-ва выводимах данных
+	if ((dataViewIndBeg + dataViewIndCount) > dataCount) {
+		dataViewIndCount = dataCount - dataViewIndBeg; // изменение размера кол-ва элементов вывода
+	}
 
-	// проверка конца среза на выход из контенера
-	if ((dataIndBeg + dataIndCount) > (dataCount)) {
-		dataIndCount = dataCount - dataIndBeg; // изменение размера кол-ва элементов среза
+	// расчёт кол-ва читаемых данных в срез
+	if ((sliceIndBeg + sliceIndCount) > dataCount) {
+		sliceIndCount = dataCount - sliceIndBeg; // изменение размера кол-ва элементов среза
 	}
 
 	stringstream dataBuffer;
 
-	while (!flagExit)
+	while (!exitFlag)
 	{
 		system("cls");
 
+		// обновление индексов вывода при пролистывании
+		if (prevDataPage != dataPage ) {
+			// установка индексов среза данных
+			dataViewIndCount = DATA_FIELD_LENGTH;
+			dataViewIndBeg = (dataPage - IND_CONV_FACTOR) * dataViewIndCount;
 
+			// проверка длины среза данных
+			if ((dataViewIndBeg + dataViewIndCount) > dataCount) {
+				dataViewIndCount = dataCount - dataViewIndBeg;
+			}
+
+			findCurPosFnc(dataPage, vertPos, dataPageCount, dataViewIndCount);
+
+			prevDataPage = dataPage;
+		}
 
 		// чтение нового среза данных
-		if (prevHorPos != horPos) {
-			// установка индексов среза данных
-			dataIndCount = DATA_FIELD_LENGTH;
-			dataIndBeg = (horPos - IND_CONV_FACTOR) * dataIndCount;
-			
-			// проверка длины среза данных
-			if ((dataIndBeg + dataIndCount - IND_CONV_FACTOR) > (dataCount - IND_CONV_FACTOR)) {
-				dataIndCount = dataCount - dataIndBeg;
+		if ( (sliceIndBeg + sliceIndCount) < (((dataPage - 1) * DATA_FIELD_LENGTH) + dataViewIndCount) ||
+			sliceIndBeg > ((dataPage - 1) * DATA_FIELD_LENGTH) )	// проверка выхода выводимых данных из локальных
+		{
+			// расчёт кол-ва подфайлов
+			if (dataCount % SUBFILE_SIZE == 0) {
+				sliceCounts = dataCount / SUBFILE_SIZE;
+			}
+			else if (dataCount > SUBFILE_SIZE) {
+				sliceCounts = dataCount / SUBFILE_SIZE;
+				++sliceCounts;
+			}
+			else {
+				++sliceCounts;
+			}
+
+			// расчёт начального индекса данных подфайла для среза sliceIndBeg
+			// расчёт текущего среза sliceCur
+			if (sliceIndBeg > ((dataPage - 1) * DATA_FIELD_LENGTH) &&
+				dataPage != 1 && dataPage != dataPageCount) // условие выхода индекса просмотра из среза в меньшую сторону
+			{
+				--sliceCur;
+				sliceIndBeg = sliceCur * SUBFILE_SIZE;
+			}
+			else if ((sliceIndBeg + sliceIndCount) < (((dataPage - 1) * DATA_FIELD_LENGTH) + dataViewIndCount) &&
+				dataPage != 1 && dataPage != dataPageCount)	// условие выхода индекса просмотра из среза в большую сторону
+			{
+				++sliceCur;
+				sliceIndBeg = sliceCur * SUBFILE_SIZE;
+			}
+			else if ((sliceIndBeg + sliceIndCount) < (((dataPage - 1) * DATA_FIELD_LENGTH) + dataViewIndCount)
+				&& dataPage == dataPageCount)	// условие выхода индекса просмотра из среза в большую сторону
+			{
+				sliceCur = sliceCounts - IND_CONV_FACTOR;
+				sliceIndBeg = sliceCur * SUBFILE_SIZE;
+			}
+			else {
+				sliceCur = 0;
+				sliceIndBeg = 0;
+			}
+
+			sliceIndCount = SUBFILE_SIZE;
+
+			// расчёт кол-ва читаемых данных в срез
+			if ((sliceIndBeg + sliceIndCount) > dataCount) {
+				sliceIndCount = dataCount - sliceIndBeg; // изменение размера кол-ва элементов среза
 			}
 
 			// чтение среза данных
-			readBinFileFnc(dir, usersData, dataIndBeg, dataIndCount, dataCount);
+			readBinFileFnc(dir, usersData, sliceIndBeg, sliceIndCount, dataCount);
 
 			if (dataCount == 0) {
-				cout << "файл пустой" << endl;
+				cerr << "\tФАЙЛ ПУСТОЙ ИЛИ ЕГО НЕ СУЩЕСТВУЕТ!" << endl;
 				system("pause");
-				flagExit = true;
+				exitFlag = true;
 			}
 
 			// нахождение количества страниц
@@ -869,19 +977,21 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 			else {
 				++dataPageCount;
 			}
-
-			findCurPosFnc(horPos, vertPos, dataPageCount, dataIndCount);
 		}
-		prevHorPos = horPos;
 
 		// установка индекса итератора контейнера с срезом данных
 		uData = usersData.begin();
-		//advance(uData, )
+		if (sliceCur != sliceCounts - IND_CONV_FACTOR) {
+			advance(uData, dataViewIndBeg % sliceIndCount);
+		}
+		else {
+			advance(uData, (dataViewIndBeg - sliceIndBeg));
+		}
 
 		// заполнение промежуточного потока для вывода таблицы
 		dataBuffer << mTemps.tableSeparatorHorizontal << "\n" << mTemps.tableHeader << "\n" << mTemps.tableSeparatorHorizontal << "\n";
-		for (u_short uIndex = dataIndBeg; uIndex <= (dataIndBeg + dataIndCount - IND_CONV_FACTOR); ++uIndex) {
-			dataBuffer << insCurPosFnc(mTemps.space, vertPos, mTemps, LEVEL_VIEW, (uIndex + 1) % (dataIndCount) + 1)
+		for (uIndex = dataViewIndBeg; uIndex <= (dataViewIndBeg + dataViewIndCount - IND_CONV_FACTOR); ++uIndex) {
+			dataBuffer << insCurPosFnc(mTemps.space, vertPos, mTemps, LEVEL_VIEW, (uIndex % dataViewIndCount) + 1)
 				<< mTemps.tableSeparatorVertical << setw(COUNTER_FIELD_WIDTH) << right << uIndex + 1 << mTemps.tableSeparatorVertical
 				<< setw(FIRST_NAME_FIELD_WIDTH) << left << uData->firstName << mTemps.tableSeparatorVertical
 				<< setw(LAST_NAME_FIELD_WIDTH) << uData->lastName << mTemps.tableSeparatorVertical
@@ -892,11 +1002,12 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 				<< mTemps.tableSeparatorHorizontal << "\n";
 
 			// защита от выхода за диапазон контейнера
-			if (uIndex != (dataIndBeg + dataIndCount - IND_CONV_FACTOR)) {
+			if (uIndex != (dataViewIndBeg + dataViewIndCount - IND_CONV_FACTOR)) {
 				++uData;
 			}
 		}
-		dataBuffer << mTemps.tablePage << setw(PAGE_FIELD_WIDTH) << right << horPos << mTemps.tablePageSeparator <<
+
+		dataBuffer << mTemps.tablePage << setw(PAGE_FIELD_WIDTH) << right << dataPage << mTemps.tablePageSeparator <<
 			left << dataPageCount << "\n";
 		dataBuffer << mTemps.itemViewDescription << endl;
 
@@ -905,22 +1016,207 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 		dataBuffer.str("");
 		dataBuffer.clear();
 
+		findCurPosFnc(dataPage, vertPos, dataPageCount, dataViewIndCount);
+		exitFlag = true;
+	}
+}
+
+void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const MenuTemplates& mTemps,
+		insertCursorPositionFnc insCurPosFnc, buttonsReadingFnc buttReadFnc, findingCursorPositionFnc2 findCurPosFnc,
+		readingBinaryFileFnc readBinFileFnc, writeInBinaryFileFnc writeInBinFileFnc,
+		deletingFromBinaryFileFnc delFromBinFileFnc, changeDataInBinaryFileFnc changeInBinFileFnc)
+{
+	using namespace std;
+
+
+	u_int	dataCount(0);
+
+	// чтение учетных записей
+	readBinFileFnc(dir, usersData, dataCount, dataCount, dataCount);	// чтение кол-ва данных
+
+	bool exitFlag = false;
+	if (dataCount == 0) {
+		cerr << "\tФАЙЛ ПУСТОЙ ИЛИ ЕГО НЕ СУЩЕСТВУЕТ!" << endl;
+		system("pause");
+		exitFlag = true;
+	}
+
+	u_int	dataPage(1);
+	u_int	vertPos(1);
+	u_short codeState;
+
+	u_int   prevDataPage(0);
+	u_int   dataPageCount(2);
+	u_int	dataViewIndBeg(0);
+	u_int	dataViewIndCount(DATA_FIELD_LENGTH);
+
+	auto	uData = usersData.begin();
+	u_int	uIndex;
+	u_int	sliceIndBeg(0);
+	u_int	sliceIndCount(0);
+	u_int	sliceCur(0);
+	u_int	sliceCounts(0);
+
+	stringstream dataBuffer;
+
+	// расчёт кол-ва выводимах данных
+	if ((dataViewIndBeg + dataViewIndCount) > dataCount) {
+		dataViewIndCount = dataCount - dataViewIndBeg; // изменение размера кол-ва элементов вывода
+	}
+
+	// расчёт кол-ва читаемых данных в срез
+	if ((sliceIndBeg + sliceIndCount) > dataCount) {
+		sliceIndCount = dataCount - sliceIndBeg; // изменение размера кол-ва элементов среза
+	}
+
+	while (!exitFlag)
+	{
+		system("cls");
+
+		// обновление индексов вывода при пролистывании
+		if (prevDataPage != dataPage ) {
+			// установка индексов среза данных
+			dataViewIndCount = DATA_FIELD_LENGTH;
+			dataViewIndBeg = (dataPage - IND_CONV_FACTOR) * dataViewIndCount;
+
+			// проверка длины среза данных
+			if ((dataViewIndBeg + dataViewIndCount) > dataCount) {
+				dataViewIndCount = dataCount - dataViewIndBeg;
+			}
+
+			findCurPosFnc(dataPage, vertPos, dataPageCount, dataViewIndCount);
+
+			prevDataPage = dataPage;
+		}
+
+		// чтение нового среза данных
+		if ( (sliceIndBeg + sliceIndCount) < (((dataPage - 1) * DATA_FIELD_LENGTH) + dataViewIndCount) ||
+			sliceIndBeg > ((dataPage - 1) * DATA_FIELD_LENGTH) )	// проверка выхода выводимых данных из локальных
+		{
+			// расчёт кол-ва подфайлов
+			if (dataCount % SUBFILE_SIZE == 0) {
+				sliceCounts = dataCount / SUBFILE_SIZE;
+			}
+			else if (dataCount > SUBFILE_SIZE) {
+				sliceCounts = dataCount / SUBFILE_SIZE;
+				++sliceCounts;
+			}
+			else {
+				++sliceCounts;
+			}
+
+			// расчёт начального индекса данных подфайла для среза sliceIndBeg
+			// расчёт текущего среза sliceCur
+			if (sliceIndBeg > ((dataPage - 1) * DATA_FIELD_LENGTH) &&
+				dataPage != 1 && dataPage != dataPageCount) // условие выхода индекса просмотра из среза в меньшую сторону
+			{
+				--sliceCur;
+				sliceIndBeg = sliceCur * SUBFILE_SIZE;
+			}
+			else if ((sliceIndBeg + sliceIndCount) < (((dataPage - 1) * DATA_FIELD_LENGTH) + dataViewIndCount) &&
+				dataPage != 1 && dataPage != dataPageCount)	// условие выхода индекса просмотра из среза в большую сторону
+			{
+				++sliceCur;
+				sliceIndBeg = sliceCur * SUBFILE_SIZE;
+			}
+			else if ((sliceIndBeg + sliceIndCount) < (((dataPage - 1) * DATA_FIELD_LENGTH) + dataViewIndCount)
+				&& dataPage == dataPageCount)	// условие выхода индекса просмотра из среза в большую сторону
+			{
+				sliceCur = sliceCounts - IND_CONV_FACTOR;
+				sliceIndBeg = sliceCur * SUBFILE_SIZE;
+			}
+			else {
+				sliceCur = 0;
+				sliceIndBeg = 0;
+			}
+
+			sliceIndCount = SUBFILE_SIZE;
+
+			// расчёт кол-ва читаемых данных в срез
+			if ((sliceIndBeg + sliceIndCount) > dataCount) {
+				sliceIndCount = dataCount - sliceIndBeg; // изменение размера кол-ва элементов среза
+			}
+
+			// чтение среза данных
+			readBinFileFnc(dir, usersData, sliceIndBeg, sliceIndCount, dataCount);
+
+			if (dataCount == 0) {
+				cerr << "\tФАЙЛ ПУСТОЙ ИЛИ ЕГО НЕ СУЩЕСТВУЕТ!" << endl;
+				system("pause");
+				exitFlag = true;
+			}
+
+			// нахождение количества страниц
+			if (dataCount % DATA_FIELD_LENGTH == 0) {
+				dataPageCount = dataCount / DATA_FIELD_LENGTH;
+			}
+			else if (dataCount > DATA_FIELD_LENGTH) {
+				dataPageCount = dataCount / DATA_FIELD_LENGTH;
+				++dataPageCount;
+			}
+			else {
+				++dataPageCount;
+			}
+		}
+
+		// установка индекса итератора контейнера с срезом данных
+		uData = usersData.begin();
+		if (sliceCur != sliceCounts - IND_CONV_FACTOR) {
+			advance(uData, dataViewIndBeg % sliceIndCount);
+		}
+		else {
+			advance(uData, (dataViewIndBeg - sliceIndBeg));
+		}
+
+		// заполнение промежуточного потока для вывода таблицы
+		dataBuffer << mTemps.tableSeparatorHorizontal << "\n" << mTemps.tableHeader << "\n" << mTemps.tableSeparatorHorizontal << "\n";
+		for (uIndex = dataViewIndBeg; uIndex <= (dataViewIndBeg + dataViewIndCount - IND_CONV_FACTOR); ++uIndex) {
+			dataBuffer << insCurPosFnc(mTemps.space, vertPos, mTemps, LEVEL_VIEW, (uIndex % dataViewIndCount) + 1)
+				<< mTemps.tableSeparatorVertical << setw(COUNTER_FIELD_WIDTH) << right << uIndex + 1 << mTemps.tableSeparatorVertical
+				<< setw(FIRST_NAME_FIELD_WIDTH) << left << uData->firstName << mTemps.tableSeparatorVertical
+				<< setw(LAST_NAME_FIELD_WIDTH) << uData->lastName << mTemps.tableSeparatorVertical
+				<< setw(MATCH_SCORE_FIELD_WIDTH) << right << uData->mathScore << mTemps.tableSeparatorVertical
+				<< setw(RU_SCORE_FIELD_WIDTH) << right << uData->ruLangScore << mTemps.tableSeparatorVertical
+				<< setw(EN_SCORE_FIELD_WIDTH) << right << uData->enLangScore << mTemps.tableSeparatorVertical
+				<< setw(TOTAL_SCORE_FIELD_WIDTH) << right << uData->totalScore << mTemps.tableSeparatorVertical << "\n"
+				<< mTemps.tableSeparatorHorizontal << "\n";
+
+			// защита от выхода за диапазон контейнера
+			if (uIndex != (dataViewIndBeg + dataViewIndCount - IND_CONV_FACTOR)) {
+				++uData;
+			}
+		}
+
+		dataBuffer << mTemps.tablePage << setw(PAGE_FIELD_WIDTH) << right << dataPage << mTemps.tablePageSeparator <<
+			left << dataPageCount << "\n";
+		dataBuffer << mTemps.itemViewDescription << endl;
+
+		// перевод данных из буфера в поток вывода 
+		cout << dataBuffer.str();
+		dataBuffer.str("");
+		dataBuffer.clear();
+
+	
 		// обработка клавиш
-		codeState = buttReadFnc(horPos, vertPos);
-		findCurPosFnc(horPos, vertPos, dataPageCount, dataIndCount);
+		codeState = buttReadFnc(dataPage, vertPos);
+		findCurPosFnc(dataPage, vertPos, dataPageCount, dataViewIndCount);
 
 		switch (codeState)
 		{
 		case KEY_ENTER:
-				
+			//changedData.push_back(((dataPage - 1) * DATA_FIELD_LENGTH) + dataViewIndCount);
 			break;
 
 		case KEY_DELETE:
+			cout << ((dataPage - 1) * DATA_FIELD_LENGTH) + vertPos - IND_CONV_FACTOR << endl;
+			system("pause");
+			delFromBinFileFnc(dir, ((dataPage - 1) * DATA_FIELD_LENGTH) + vertPos - IND_CONV_FACTOR,
+				dataCount, writeInBinFileFnc);
 
 			break;
 
 		case KEY_ESCAPE:
-			flagExit = true;
+			exitFlag = true;
 			break;
 		}
 
