@@ -167,6 +167,7 @@ static struct ExamResultsBinary {
 using buttonsReadingFnc			= u_short(*)(u_int& horPosOut, u_int& vertPosOut);
 using findingCursorPositionFnc1 = void(*)(u_int& vertPosOut, const u_int& heigh);
 using findingCursorPositionFnc2 = void(*)(u_int& horPosOut, u_int& vertPosOut, const u_int& length, const u_int& height);
+using userInputFnc				= void(*)(ExamResults& userData);
 
 
 using readingBinaryFileFnc      = void(*)(const std::string dir, std::list<ExamResults>& usersData, const u_int& uDataReadIndBegOut,
@@ -188,7 +189,7 @@ void    CreateRandomBinDataset(std::string dir);
 u_short ButtonsReading(u_int& horPosOut, u_int& vertPosOut);
 void    FindingCursorPosition(u_int& vertPosOut, const u_int& heigh);
 void    FindingCursorPosition(u_int& horPosOut, u_int& vertPosOut, const u_int& length, const u_int& height);
-
+void	UserInput(ExamResults& userData);
 
 void    ReadingBinaryFile(const std::string dir, std::list<ExamResults>& usersData, const u_int& uDataReadIndBegOut,
 			const u_int& uDataReadIndCountOut, u_int& uDataCountOut);
@@ -206,7 +207,7 @@ void		PrintMainMenu(const u_int& vertPos, const MenuTemplates& mTemps, insertCur
 void		PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const MenuTemplates& mTemps,
 				insertCursorPositionFnc insCurPosFnc, buttonsReadingFnc buttReadFnc, findingCursorPositionFnc2 findCurPosFnc,
 				readingBinaryFileFnc readBinFileFnc, writeInBinaryFileFnc writeInBinFileFnc,
-				deletingFromBinaryFileFnc delFromBinFileFnc, changeDataInBinaryFileFnc changeInBinFileFnc);
+				deletingFromBinaryFileFnc delFromBinFileFnc, changeDataInBinaryFileFnc changeInBinFileFnc, userInputFnc userInputFnc);
 //
 //void PrintSearchItem();
 //
@@ -285,7 +286,7 @@ int main(int argc, char* argv[])
 					InsertCursorPosition, ButtonsReading,
 					FindingCursorPosition, ReadingBinaryFile, 
 					WriteInBinaryFile, DeletingFromBinaryFile,
-					ChangeDataInBinaryFile);
+					ChangeDataInBinaryFile, UserInput);
 				break;
 
 			case ITEM_SEARCH:
@@ -430,6 +431,37 @@ void FindingCursorPosition(u_int& horPosOut, u_int& vertPosOut, const u_int& len
 	else if (vertPosOut > height) {
 		vertPosOut = vertPosOut % height;
 	}
+}
+
+void UserInput(ExamResults& userData)
+{
+	SetConsoleCP(1251);
+	SetConsoleOutputCP(1251);
+	using namespace std;
+
+	stringstream input;
+	string buffer;
+	string subBuffer;
+	getline(cin, buffer);
+	input << buffer;
+
+	// запись строк
+	while (buffer.length() == 0) {
+		getline(cin, buffer);
+		input << buffer;
+		cout << "\t";
+	}
+
+	input >> userData.firstName;
+	input >> userData.lastName;
+
+	// запись чисел с преобразованием из строк
+	input >> subBuffer;
+	userData.mathScore = atoi(subBuffer.c_str());
+	input >> subBuffer;
+	userData.ruLangScore = atoi(subBuffer.c_str());
+	input >> subBuffer;
+	userData.enLangScore = atoi(subBuffer.c_str());
 }
 
 void ReadingBinaryFile(const std::string dir, std::list<ExamResults>& usersData, const u_int& dataReadIndBeg,
@@ -609,7 +641,6 @@ void DeletingFromBinaryFile(const std::string& dir, const u_int& droppedInd,
 
 	// запись в основной файл изменённых данных
 	writeInBinFileFnc(dir);
-	system("pause");
 }
 
 void ChangeDataInBinaryFile(const std::string& dir, const u_int& changeInd, const u_int& dataCount, 
@@ -774,7 +805,7 @@ void PrintMainMenu(const u_int& vertPos, const MenuTemplates& mTemps, insertCurs
 void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const MenuTemplates& mTemps,
 		insertCursorPositionFnc insCurPosFnc, buttonsReadingFnc buttReadFnc, findingCursorPositionFnc2 findCurPosFnc,
 		readingBinaryFileFnc readBinFileFnc, writeInBinaryFileFnc writeInBinFileFnc,
-		deletingFromBinaryFileFnc delFromBinFileFnc, changeDataInBinaryFileFnc changeInBinFileFnc)
+		deletingFromBinaryFileFnc delFromBinFileFnc, changeDataInBinaryFileFnc changeInBinFileFnc, userInputFnc userInputFnc)
 {
 	using namespace std;
 
@@ -790,24 +821,25 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 		exitFlag = true;
 	}
 
-	u_int	dataPage(1);
-	u_int	vertPos(1);
-	u_short codeState(9);
+	u_short codeState(9);							// код клавиши
+	u_int	vertPos(1);								// положение указателя
 
-	u_int   prevDataPage(0);
-	u_int   dataPageCount(2);
-	u_int	dataViewIndBeg(0);
-	u_int	dataViewIndCount(DATA_FIELD_LENGTH);
+	u_int	dataPage(1);							// текущая страница
+	u_int   prevDataPage(0);						// предыдущая страница
+	u_int   dataPageCount(2);						// число страниц
 
-	auto	uData = usersData.begin();
-	u_int	uIndex;
-	u_int	sliceIndBeg(0);
-	u_int	sliceIndCount(0);
-	u_int	sliceCur(0);
-	u_int	sliceCounts(0);
+	u_int	dataViewIndBeg(0);						// начальный индекс просмотра
+	u_int	dataViewIndCount(DATA_FIELD_LENGTH);	// число эл. просмотра
 
-	bool changeFlag = false;
-	stringstream dataBuffer;
+	auto	uData = usersData.begin();				// эл. из среза
+	u_int	uIndex;									// пременная для итератора вывода
+	u_int	sliceIndBeg(0);							// начальный индекс среза
+	u_int	sliceIndCount(0);						// число элементов среза
+	u_int	sliceCur(0);							// текущий срез
+	u_int	sliceCounts(0);							// число срезов
+
+	bool changeFlag = false;						// влаг изменения эл.
+	stringstream dataBuffer;						// потое для вывода
 
 	// расчёт кол-ва выводимах данных
 	if ((dataViewIndBeg + dataViewIndCount) > dataCount) {
@@ -821,7 +853,9 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 
 	while (!exitFlag)
 	{
-		system("cls");
+		//////////////////////////////////////////////
+		// чтение и поиск всех необходимых индексов	//
+		//////////////////////////////////////////////
 
 		if (dataCount == 0) {
 			exitFlag = true;
@@ -932,20 +966,24 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 			advance(uData, (dataViewIndBeg - sliceIndBeg));
 		}
 
+		//////////////////////////////////////////////////
+		//	вывод и обработка пользовательских данных	//
+		//////////////////////////////////////////////////
+
 		// заполнение промежуточного потока для вывода таблицы
 		dataBuffer << mTemps.tableSeparatorHorizontal << "\n" << mTemps.tableHeader << "\n" << mTemps.tableSeparatorHorizontal << "\n";
 		for (uIndex = dataViewIndBeg; uIndex <= (dataViewIndBeg + dataViewIndCount - IND_CONV_FACTOR); ++uIndex, ++uData) {
-			u_int prntInd;
+			u_int printInd;
 			if ( dataViewIndBeg != 0 && dataPage != dataPageCount ) {
-				prntInd = (uIndex % dataViewIndCount) + 1;
+				printInd = (uIndex % dataViewIndCount) + 1;
 			}
 			else if ( dataPage == dataPageCount ) {
-				prntInd = uIndex - ( DATA_FIELD_LENGTH * (dataPageCount - 1) ) + 1;
+				printInd = uIndex - ( DATA_FIELD_LENGTH * (dataPageCount - 1) ) + 1;
 			}
 			else {
-				prntInd = uIndex + 1;
+				printInd = uIndex + 1;
 			} 
-			dataBuffer << insCurPosFnc(mTemps.space, vertPos, mTemps, LEVEL_VIEW, prntInd)
+			dataBuffer << insCurPosFnc(mTemps.space, vertPos, mTemps, LEVEL_VIEW, printInd)
 				<< mTemps.tableSeparatorVertical << setw(COUNTER_FIELD_WIDTH) << right << uIndex + 1 << mTemps.tableSeparatorVertical
 				<< setw(FIRST_NAME_FIELD_WIDTH) << left << uData->firstName << mTemps.tableSeparatorVertical
 				<< setw(LAST_NAME_FIELD_WIDTH) << uData->lastName << mTemps.tableSeparatorVertical
@@ -966,26 +1004,28 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 		dataBuffer << mTemps.itemViewDescription << endl;
 
 		// перевод данных из буфера в поток вывода 
+		system("cls");
 		cout << dataBuffer.str();
 		dataBuffer.str("");
 		dataBuffer.clear();
 
-		cout << "vertPos " << vertPos << endl;
 		// обработка клавиш
 		codeState = buttReadFnc(dataPage, vertPos);
 		findCurPosFnc(dataPage, vertPos, dataPageCount, dataViewIndCount);
 		
+		// переменные для изменения данных
 		long int changeInd(0);
 		ExamResults changeUser;
 
 		switch (codeState)
 		{
-		case KEY_ENTER:
+		case KEY_ENTER: // изменение эл в базе
 			system("cls");
 
 			changeInd = dataViewIndCount - vertPos + IND_CONV_FACTOR;
 			advance(uData, (-1)* changeInd);
-			cout << mTemps.cursor << mTemps.tableSeparatorVertical 
+			cout << "\t\t\t\t редактируемая учетная запись \n"
+				<< mTemps.tableSeparatorHorizontal << " " << mTemps.cursor << mTemps.tableSeparatorVertical
 				<< setw(COUNTER_FIELD_WIDTH) << right << dataViewIndBeg + vertPos << mTemps.tableSeparatorVertical
 				<< setw(FIRST_NAME_FIELD_WIDTH) << left << uData->firstName << mTemps.tableSeparatorVertical
 				<< setw(LAST_NAME_FIELD_WIDTH) << uData->lastName << mTemps.tableSeparatorVertical
@@ -995,37 +1035,19 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 				<< setw(TOTAL_SCORE_FIELD_WIDTH) << right << uData->totalScore << mTemps.tableSeparatorVertical << "\n"
 				<< mTemps.tableSeparatorHorizontal << endl;
 
-			cout << "Введите данные новые: ";
+			cout << "\n\t\t введите новые данные: ";
 
-			cin >> changeUser.firstName;
-			cin >> changeUser.lastName;
-			//getline(cin, changeUser.firstName);
-			//getline(cin, changeUser.lastName);
-
-			cin >> changeUser.mathScore;
-			cin >> changeUser.ruLangScore;
-			cin >> changeUser.enLangScore;
-
-			cout << mTemps.tableSeparatorHorizontal << "\n" << mTemps.cursor << mTemps.tableSeparatorVertical
-				<< setw(FIRST_NAME_FIELD_WIDTH) << left << changeUser.firstName << mTemps.tableSeparatorVertical
-				<< setw(LAST_NAME_FIELD_WIDTH) << changeUser.lastName << mTemps.tableSeparatorVertical
-				<< setw(MATCH_SCORE_FIELD_WIDTH) << right << changeUser.mathScore << mTemps.tableSeparatorVertical
-				<< setw(RU_SCORE_FIELD_WIDTH) << right << changeUser.ruLangScore << mTemps.tableSeparatorVertical
-				<< setw(EN_SCORE_FIELD_WIDTH) << right << changeUser.enLangScore << mTemps.tableSeparatorVertical << endl;
-
-			changeInBinFileFnc(dir, ((dataPage - 1) * DATA_FIELD_LENGTH) + vertPos - IND_CONV_FACTOR, 
+			userInputFnc(changeUser);
+			changeInBinFileFnc(dir, ((dataPage - 1)* DATA_FIELD_LENGTH) + vertPos - IND_CONV_FACTOR,
 				dataCount, changeUser, writeInBinFileFnc);
+
 			changeFlag = true;
-			system("pause");
 			break;
 
-		case KEY_DELETE:
-
-			cout << ((dataPage - 1) * DATA_FIELD_LENGTH) + vertPos - IND_CONV_FACTOR << endl;
+		case KEY_DELETE: // удадение эл. из базы
 		
 			delFromBinFileFnc(dir, ((dataPage - 1) * DATA_FIELD_LENGTH) + vertPos - IND_CONV_FACTOR,
 				dataCount, writeInBinFileFnc);
-
 
 			if (vertPos == dataViewIndCount && dataPage == dataPageCount) {
 				--vertPos;
@@ -1041,13 +1063,11 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 			changeFlag = true;
 			break;
 
-		case KEY_ESCAPE:
+		case KEY_ESCAPE: // выход из ф. просмотра
 			exitFlag = true;
 			break;
 		}
-
 	}
-
 }
 
 void PrintCrateItem(std::string& dir, std::list<ExamResults>& userData, const MenuTemplates& mTemps, u_int& horPos,
