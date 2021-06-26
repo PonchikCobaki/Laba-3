@@ -681,64 +681,64 @@ std::string InsertCursorPosition(std::string str, const u_int& vertPos, const Me
 
 	if (level == LEVEL_MAIN)
 	{
-		switch (vertPos)
+		switch ( vertPos )
 		{
 		case ITEM_VIEW:
-			if (mTemps.lineView == str) {
+			if ( mTemps.lineView == str ) {
 				str.replace(0, 1, mTemps.cursor);
 			}
 			break;
 
 		case ITEM_SEARCH:
-			if (mTemps.lineSearch == str) {
+			if ( mTemps.lineSearch == str ) {
 				str.replace(0, 1, mTemps.cursor);
 			}
 			break;
 
 		case ITEM_APPEND:
-			if (mTemps.lineAppend == str) {
+			if ( mTemps.lineAppend == str ) {
 				str.replace(0, 1, mTemps.cursor);
 			}
 			break;
 
 		case ITEM_STATISTICS:
-			if (mTemps.lineStatistics == str) {
+			if ( mTemps.lineStatistics == str ) {
 				str.replace(0, 1, mTemps.cursor);
 			}
 			break;
 
 		case ITEM_CRATE:
-			if (mTemps.lineCreate == str) {
+			if ( mTemps.lineCreate == str ) {
 				str.replace(0, 1, mTemps.cursor);
 			}
 			break;
 		case ITEM_EXIT:
-			if (mTemps.lineExit == str) {
+			if ( mTemps.lineExit == str ) {
 				str.replace(0, 1, mTemps.cursor);
 			}
 			break;
 		}
 	}
 
-	else if (level == LEVEL_VIEW) {
-		if (iterator == 0) {
-			if ((iterator + 1) == vertPos) {
+	else if ( level == LEVEL_VIEW ) {
+		if ( vertPos == 0 ) {
+			if ( iterator == (vertPos + 1) ) {
 				str.replace(0, 1, mTemps.cursor);
 			}
-		}
+		} 
 		else {
-			if (iterator == vertPos) {
+			if ( iterator == vertPos ) {
 				str.replace(0, 1, mTemps.cursor);
 			}
 		}
 	}
 
-	else if (level == LEVEL_SEARCH) {
+	else if ( level == LEVEL_SEARCH ) {
 
 	}
 
-	else if (level == LEVEL_APPEND) {
-		switch (vertPos)
+	else if ( level == LEVEL_APPEND ) {
+		switch ( vertPos )
 		{
 		case ITEM_APPEND_YES:
 			if (mTemps.appLineYes == str) {
@@ -777,7 +777,6 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 		deletingFromBinaryFileFnc delFromBinFileFnc, changeDataInBinaryFileFnc changeInBinFileFnc)
 {
 	using namespace std;
-	setlocale(LC_ALL, "ru");
 
 	u_int	dataCount(0);
 
@@ -913,12 +912,12 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 			if (dataCount % DATA_FIELD_LENGTH == 0) {
 				dataPageCount = dataCount / DATA_FIELD_LENGTH;
 			}
-			else if (dataCount > DATA_FIELD_LENGTH) {
+			else if (dataCount % DATA_FIELD_LENGTH != 0 && dataCount > DATA_FIELD_LENGTH) {
 				dataPageCount = dataCount / DATA_FIELD_LENGTH;
 				++dataPageCount;
 			}
 			else {
-				++dataPageCount;
+				dataPageCount = 1;
 			}
 
 			changeFlag = false;
@@ -937,11 +936,15 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 		dataBuffer << mTemps.tableSeparatorHorizontal << "\n" << mTemps.tableHeader << "\n" << mTemps.tableSeparatorHorizontal << "\n";
 		for (uIndex = dataViewIndBeg; uIndex <= (dataViewIndBeg + dataViewIndCount - IND_CONV_FACTOR); ++uIndex, ++uData) {
 			u_int prntInd;
-			if (dataPage != dataPageCount || dataViewIndCount == DATA_FIELD_LENGTH) {
+			if ( dataViewIndBeg != 0 && dataPage != dataPageCount ) {
 				prntInd = (uIndex % dataViewIndCount) + 1;
-			} else {
-				prntInd = (uIndex % dataViewIndBeg) + 1;
 			}
+			else if ( dataPage == dataPageCount ) {
+				prntInd = uIndex - ( DATA_FIELD_LENGTH * (dataPageCount - 1) ) + 1;
+			}
+			else {
+				prntInd = uIndex + 1;
+			} 
 			dataBuffer << insCurPosFnc(mTemps.space, vertPos, mTemps, LEVEL_VIEW, prntInd)
 				<< mTemps.tableSeparatorVertical << setw(COUNTER_FIELD_WIDTH) << right << uIndex + 1 << mTemps.tableSeparatorVertical
 				<< setw(FIRST_NAME_FIELD_WIDTH) << left << uData->firstName << mTemps.tableSeparatorVertical
