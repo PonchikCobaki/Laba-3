@@ -110,7 +110,7 @@ enum IndexConst {
 };
 
 enum DataBuffersSize {
-	SUBFILE_SIZE = 2 * DATA_FIELD_LENGTH, // 98 размер под файлов для удаления/изменения данных 7
+	SUBFILE_SIZE = 7 * DATA_FIELD_LENGTH, // 98 размер под файлов для удаления/изменения данных 7
 };
 
 #pragma pack(1)
@@ -178,7 +178,8 @@ using deletingFromBinaryFileFnc = void(*)(const std::string& dir, const u_int& d
 									const u_int& dataCount, writeInBinaryFileFnc writeInBinFileFnc);
 using changeDataInBinaryFileFnc = void(*)(const std::string& dir, const u_int& changeInd, const u_int& dataCount,
 									const ExamResults& userData, writeInBinaryFileFnc writeInBinFile);
-
+using appendInBinaryFileFnc		= void(*)(const std::string& dir, const u_int& appInd, const bool& offset, const u_int& dataCount,
+									const ExamResults& userData, writeInBinaryFileFnc writeInBinFileFnc);
 
 using insertCursorPositionFnc	= std::string(*)(std::string str, const u_int& vertPos, const MenuTemplates& mTemps,
 									u_short level, const u_int& iterator);
@@ -199,7 +200,8 @@ void	DeletingFromBinaryFile(const std::string& dir, const u_int& droppedInd,
 			const u_int& dataCount, writeInBinaryFileFnc writeInBinFileFnc);
 void	ChangeDataInBinaryFile(const std::string& dir, const u_int& changeInd, const u_int& dataCount,
 			const ExamResults& userData, writeInBinaryFileFnc writeInBinFile);
-
+void	AppendInBinaryFile(const std::string& dir, const u_int& appInd, const bool& offset, const u_int& dataCount,
+			const ExamResults& userData, writeInBinaryFileFnc writeInBinFileFnc);
 
 std::string InsertCursorPosition(std::string str, const u_int& vertPos, const MenuTemplates& mTemps,
 	u_short level, const u_int& iterator);
@@ -207,7 +209,9 @@ void		PrintMainMenu(const u_int& vertPos, const MenuTemplates& mTemps, insertCur
 void		PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const MenuTemplates& mTemps,
 				insertCursorPositionFnc insCurPosFnc, buttonsReadingFnc buttReadFnc, findingCursorPositionFnc2 findCurPosFnc,
 				readingBinaryFileFnc readBinFileFnc, writeInBinaryFileFnc writeInBinFileFnc,
-				deletingFromBinaryFileFnc delFromBinFileFnc, changeDataInBinaryFileFnc changeInBinFileFnc, userInputFnc userInputFnc);
+				deletingFromBinaryFileFnc delFromBinFileFnc, changeDataInBinaryFileFnc changeInBinFileFnc,
+				appendInBinaryFileFnc appInBinFileFnc, userInputFnc userInputFnc);
+
 //
 //void PrintSearchItem();
 //
@@ -215,9 +219,9 @@ void		PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Me
 //
 //void PrintStatisticsItem();
 //
-void		PrintCrateItem(std::string& dir, std::list<ExamResults>& userData, const MenuTemplates& mTemps,
-				u_int& horPos, u_int& vertPos, insertCursorPositionFnc insCurPosFnc,
-				buttonsReadingFnc buttReadFnc, findingCursorPositionFnc1 findCurPosFnc);
+
+void		PrintCrateItem(std::string& dir, const MenuTemplates& mTemps, insertCursorPositionFnc insCurPosFnc,
+				buttonsReadingFnc buttReadFnc, findingCursorPositionFnc1 findCurPosFnc, userInputFnc userInputFnc);
 
 
 
@@ -286,7 +290,7 @@ int main(int argc, char* argv[])
 					InsertCursorPosition, ButtonsReading,
 					FindingCursorPosition, ReadingBinaryFile, 
 					WriteInBinaryFile, DeletingFromBinaryFile,
-					ChangeDataInBinaryFile, UserInput);
+					ChangeDataInBinaryFile, AppendInBinaryFile, UserInput);
 				break;
 
 			case ITEM_SEARCH:
@@ -300,12 +304,13 @@ int main(int argc, char* argv[])
 				break;
 
 			case ITEM_STATISTICS:
+				CreateRandomBinDataset(path);
 				break;
 
 			case ITEM_CRATE:
-				//CrateItemPrinting(path, userData, menuMain, horizontalPos, verticalPos, InsertCursorPosition,
-				//	ButtonsReading, FindingCursorPosition);
-				CreateRandomBinDataset(path);
+				PrintCrateItem(path, allMenuTemplatse, InsertCursorPosition,
+					ButtonsReading, FindingCursorPosition, UserInput);
+				//CreateRandomBinDataset(path);
 				break;
 
 			case ITEM_EXIT:
@@ -337,12 +342,18 @@ void CreateRandomBinDataset(std::string dir)
 
 
 	ofstream outBinFile(dir, ios::binary);
-	for (int i = 0; i < size; i++) {
-		strcpy_s(users.firstName, LENGTH_FIRST_NAME, firstNames[mersenne() % 10].c_str());
-		strcpy_s(users.lastName, LENGTH_LAST_NAME, lastNames[mersenne() % 10].c_str());
-		users.mathScore = mersenne() % 101;
-		users.ruLangScore = mersenne() % 101;
-		users.enLangScore = mersenne() % 101;
+	for (u_int i = 0; i < size; i++) {
+		//strcpy_s(users.firstName, LENGTH_FIRST_NAME, firstNames[mersenne() % 10].c_str());
+		//strcpy_s(users.lastName, LENGTH_LAST_NAME, lastNames[mersenne() % 10].c_str());
+		//users.mathScore = mersenne() % 101;
+		//users.ruLangScore = mersenne() % 101;
+		//users.enLangScore = mersenne() % 101;
+
+		strcpy_s(users.firstName, LENGTH_FIRST_NAME, firstNames[i % 10].c_str());
+		strcpy_s(users.lastName, LENGTH_LAST_NAME, lastNames[i % 10].c_str());
+		users.mathScore = i % 101;
+		users.ruLangScore = i % 101;
+		users.enLangScore = i % 101;
 
 		outBinFile.write(users.firstName, sizeof(*users.lastName) * LENGTH_FIRST_NAME);
 		outBinFile.write(users.lastName, sizeof(*users.firstName) * LENGTH_LAST_NAME);
@@ -350,12 +361,12 @@ void CreateRandomBinDataset(std::string dir)
 		outBinFile.write((char*)&users.ruLangScore, sizeof(users.ruLangScore));
 		outBinFile.write((char*)&users.enLangScore, sizeof(users.enLangScore));
 
-		cout << i + 1 << " " << setw(FIRST_NAME_FIELD_WIDTH) << users.firstName << " " << setw(LAST_NAME_FIELD_WIDTH) 
-			<< users.lastName << " " << setw(MATCH_SCORE_FIELD_WIDTH) << users.mathScore <<
-			" " << setw(RU_SCORE_FIELD_WIDTH) << users.ruLangScore << " " << setw(EN_SCORE_FIELD_WIDTH) << users.enLangScore << endl;
+		//cout << i + 1 << " " << setw(FIRST_NAME_FIELD_WIDTH) << users.firstName << " " << setw(LAST_NAME_FIELD_WIDTH) 
+		//	<< users.lastName << " " << setw(MATCH_SCORE_FIELD_WIDTH) << users.mathScore <<
+		//	" " << setw(RU_SCORE_FIELD_WIDTH) << users.ruLangScore << " " << setw(EN_SCORE_FIELD_WIDTH) << users.enLangScore << endl;
 	}
 	outBinFile.close();
-
+	cout << "END";
 	system("pause");
 }
 
@@ -594,7 +605,6 @@ void DeletingFromBinaryFile(const std::string& dir, const u_int& droppedInd,
 	// преременные для работы с данными
 	ExamResultsBinary confVal;
 	char *dataBuffer = new char[confVal.writeSize];
-	u_int dataInd(0);
 
 	ifstream inBinFile(dir, ios::binary);
 	if (!inBinFile) {
@@ -615,7 +625,7 @@ void DeletingFromBinaryFile(const std::string& dir, const u_int& droppedInd,
 		cerr << "Error opening output buffer file on time deleting" << endl;
 		system("pause");
 	}
-	for (int j = 0; j < dataCount; ++j) {
+	for (u_int dataInd = 0; dataInd < dataCount; ++dataInd) {
 		// удаление элемента, путем пропуска его записи в подфайл
 		if (droppedInd != dataInd) {
 			inBinFile.read(dataBuffer, confVal.writeSize);
@@ -632,7 +642,6 @@ void DeletingFromBinaryFile(const std::string& dir, const u_int& droppedInd,
 			//inBinFile.read(dataBuffer, confVal.writeSize);
 			//cout << "dataInd " << dataInd << " data " << dataBuffer << endl;
 		}
-		++dataInd;	// увличение абсолютного индекса всех данных
 	}
 	outBufBinFile.close();
 
@@ -644,7 +653,7 @@ void DeletingFromBinaryFile(const std::string& dir, const u_int& droppedInd,
 }
 
 void ChangeDataInBinaryFile(const std::string& dir, const u_int& changeInd, const u_int& dataCount, 
-		const ExamResults& userData, writeInBinaryFileFnc writeInBinFile)
+		const ExamResults& userData, writeInBinaryFileFnc writeInBinFileFnc)
 {
 	using namespace std;
 
@@ -655,7 +664,6 @@ void ChangeDataInBinaryFile(const std::string& dir, const u_int& changeInd, cons
 	// преременные для работы с данными
 	ExamResultsBinary uDataBin;
 	char* dataBuffer = new char[uDataBin.writeSize];
-	u_int dataInd(0);
 
 	// запись данных в подфайлы	//
 	// очистка подфайла, если он уже существует
@@ -673,7 +681,7 @@ void ChangeDataInBinaryFile(const std::string& dir, const u_int& changeInd, cons
 		cerr << "Error opening output buffer file on time change" << endl;
 		system("pause");
 	}
-	for (int j = 0; j < dataCount; ++j) {
+	for (u_int dataInd = 0; dataInd < dataCount; ++dataInd) {
 		// изменение элемента
 		if (changeInd != dataInd) {
 			inBinFile.read(dataBuffer, uDataBin.writeSize);
@@ -695,14 +703,82 @@ void ChangeDataInBinaryFile(const std::string& dir, const u_int& changeInd, cons
 			outBufBinFile.write((char*)&uDataBin.ruLangScore, sizeof(uDataBin.ruLangScore));
 			outBufBinFile.write((char*)&uDataBin.enLangScore, sizeof(uDataBin.enLangScore));
 		}
-		++dataInd; // увличение абсолютного индекса всех данных
-		}
+	}
 		
 	outBufBinFile.close();
 	inBinFile.close();
 
 	// запись в основной файл изменённых данных
-	writeInBinFile(dir);
+	writeInBinFileFnc(dir);
+}
+
+void AppendInBinaryFile(const std::string& dir, const u_int& appInd, const bool& offset, const u_int& dataCount,
+	const ExamResults& userData, writeInBinaryFileFnc writeInBinFileFnc)
+{
+	using namespace std;
+
+	// преременные для работы с подфайлом
+	string	dirBuf = dir.substr(0, dir.length() - 4) + "_buffer"s
+		+ dir.substr(dir.length() - 4, 4);
+
+	// преременные для работы с данными
+	ExamResultsBinary uDataBin;
+	char* dataBuffer = new char[uDataBin.writeSize];
+
+	// запись данных в подфайлы	//
+	// очистка подфайла, если он уже существует
+	ofstream outFile(dirBuf, ios::binary | ios::trunc);
+	outFile.close();
+
+	ifstream inBinFile(dir, ios::binary);
+	if (!inBinFile) {
+		cerr << "Error opening input file on time change" << endl;
+		system("pause");
+	}
+	// запись в подфайл
+	ofstream outBufBinFile(dirBuf, ios::binary | ios::app);
+	if (!outBufBinFile) {
+		cerr << "Error opening output buffer file on time change" << endl;
+		system("pause");
+	}
+	for (u_int dataInd(0); dataInd < dataCount; ++dataInd) {
+		// изменение элемента
+		if (appInd != dataInd) {
+			inBinFile.read(dataBuffer, uDataBin.writeSize);
+			outBufBinFile.write(dataBuffer, uDataBin.writeSize);
+		}
+		else {
+			if (offset == true) {
+				inBinFile.read(dataBuffer, uDataBin.writeSize);
+				outBufBinFile.write(dataBuffer, uDataBin.writeSize);
+			}
+
+			// копирование данных в структуру для записи
+			strcpy_s(uDataBin.firstName, LENGTH_FIRST_NAME, userData.firstName.c_str());
+			strcpy_s(uDataBin.lastName, LENGTH_LAST_NAME, userData.lastName.c_str());
+			uDataBin.mathScore = userData.mathScore;
+			uDataBin.ruLangScore = userData.ruLangScore;
+			uDataBin.enLangScore = userData.enLangScore;
+
+			// запись структуры
+			outBufBinFile.write(uDataBin.firstName, sizeof(*uDataBin.lastName) * LENGTH_FIRST_NAME);
+			outBufBinFile.write(uDataBin.lastName, sizeof(*uDataBin.firstName) * LENGTH_LAST_NAME);
+			outBufBinFile.write((char*)&uDataBin.mathScore, sizeof(uDataBin.mathScore));
+			outBufBinFile.write((char*)&uDataBin.ruLangScore, sizeof(uDataBin.ruLangScore));
+			outBufBinFile.write((char*)&uDataBin.enLangScore, sizeof(uDataBin.enLangScore));
+
+			if (offset == false) {
+				inBinFile.read(dataBuffer, uDataBin.writeSize);
+				outBufBinFile.write(dataBuffer, uDataBin.writeSize);
+			}
+		}
+	}
+
+	outBufBinFile.close();
+	inBinFile.close();
+
+	// запись в основной файл изменённых данных
+	writeInBinFileFnc(dir);
 }
 
 std::string InsertCursorPosition(std::string str, const u_int& vertPos, const MenuTemplates& mTemps,
@@ -805,7 +881,8 @@ void PrintMainMenu(const u_int& vertPos, const MenuTemplates& mTemps, insertCurs
 void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const MenuTemplates& mTemps,
 		insertCursorPositionFnc insCurPosFnc, buttonsReadingFnc buttReadFnc, findingCursorPositionFnc2 findCurPosFnc,
 		readingBinaryFileFnc readBinFileFnc, writeInBinaryFileFnc writeInBinFileFnc,
-		deletingFromBinaryFileFnc delFromBinFileFnc, changeDataInBinaryFileFnc changeInBinFileFnc, userInputFnc userInputFnc)
+		deletingFromBinaryFileFnc delFromBinFileFnc, changeDataInBinaryFileFnc changeInBinFileFnc,
+		appendInBinaryFileFnc appInBinFileFnc, userInputFnc userInputFnc)
 {
 	using namespace std;
 
@@ -1019,31 +1096,6 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 
 		switch (codeState)
 		{
-		case KEY_ENTER: // изменение эл в базе
-			system("cls");
-
-			changeInd = dataViewIndCount - vertPos + IND_CONV_FACTOR;
-			advance(uData, (-1)* changeInd);
-			cout << "\t\t\t\t редактируемая учетная запись \n"
-				<< mTemps.tableSeparatorHorizontal << " " << mTemps.cursor << mTemps.tableSeparatorVertical
-				<< setw(COUNTER_FIELD_WIDTH) << right << dataViewIndBeg + vertPos << mTemps.tableSeparatorVertical
-				<< setw(FIRST_NAME_FIELD_WIDTH) << left << uData->firstName << mTemps.tableSeparatorVertical
-				<< setw(LAST_NAME_FIELD_WIDTH) << uData->lastName << mTemps.tableSeparatorVertical
-				<< setw(MATCH_SCORE_FIELD_WIDTH) << right << uData->mathScore << mTemps.tableSeparatorVertical
-				<< setw(RU_SCORE_FIELD_WIDTH) << right << uData->ruLangScore << mTemps.tableSeparatorVertical
-				<< setw(EN_SCORE_FIELD_WIDTH) << right << uData->enLangScore << mTemps.tableSeparatorVertical
-				<< setw(TOTAL_SCORE_FIELD_WIDTH) << right << uData->totalScore << mTemps.tableSeparatorVertical << "\n"
-				<< mTemps.tableSeparatorHorizontal << endl;
-
-			cout << "\n\t\t введите новые данные: ";
-
-			userInputFnc(changeUser);
-			changeInBinFileFnc(dir, ((dataPage - 1)* DATA_FIELD_LENGTH) + vertPos - IND_CONV_FACTOR,
-				dataCount, changeUser, writeInBinFileFnc);
-
-			changeFlag = true;
-			break;
-
 		case KEY_DELETE: // удадение эл. из базы
 		
 			delFromBinFileFnc(dir, ((dataPage - 1) * DATA_FIELD_LENGTH) + vertPos - IND_CONV_FACTOR,
@@ -1063,6 +1115,57 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 			changeFlag = true;
 			break;
 
+		case KEY_ENTER: // изменение эл в базе
+			system("cls");
+
+			changeInd = dataViewIndCount - vertPos + IND_CONV_FACTOR;
+			advance(uData, (-1) * changeInd);
+			cout << "\t\t\t\t редактируемая учетная запись \n"
+				<< mTemps.tableSeparatorHorizontal << " " << mTemps.cursor << mTemps.tableSeparatorVertical
+				<< setw(COUNTER_FIELD_WIDTH) << right << dataViewIndBeg + vertPos << mTemps.tableSeparatorVertical
+				<< setw(FIRST_NAME_FIELD_WIDTH) << left << uData->firstName << mTemps.tableSeparatorVertical
+				<< setw(LAST_NAME_FIELD_WIDTH) << uData->lastName << mTemps.tableSeparatorVertical
+				<< setw(MATCH_SCORE_FIELD_WIDTH) << right << uData->mathScore << mTemps.tableSeparatorVertical
+				<< setw(RU_SCORE_FIELD_WIDTH) << right << uData->ruLangScore << mTemps.tableSeparatorVertical
+				<< setw(EN_SCORE_FIELD_WIDTH) << right << uData->enLangScore << mTemps.tableSeparatorVertical
+				<< setw(TOTAL_SCORE_FIELD_WIDTH) << right << uData->totalScore << mTemps.tableSeparatorVertical << "\n"
+				<< mTemps.tableSeparatorHorizontal << endl;
+
+			cout << "\n\t\t введите новые данные: ";
+
+			userInputFnc(changeUser);
+			changeInBinFileFnc(dir, ((dataPage - 1) * DATA_FIELD_LENGTH) + vertPos - IND_CONV_FACTOR,
+				dataCount, changeUser, writeInBinFileFnc);
+
+			changeFlag = true;
+			break;
+
+		case KEY_OTHER:
+			system("cls");
+
+			changeInd = dataViewIndCount - vertPos + IND_CONV_FACTOR;
+			advance(uData, (-1) * changeInd);
+
+			cout << "\t\t\t\t добавление на место уеной записи \n"
+				<< mTemps.tableSeparatorHorizontal << " " << mTemps.cursor << mTemps.tableSeparatorVertical
+				<< setw(COUNTER_FIELD_WIDTH) << right << dataViewIndBeg + vertPos << mTemps.tableSeparatorVertical
+				<< setw(FIRST_NAME_FIELD_WIDTH) << left << uData->firstName << mTemps.tableSeparatorVertical
+				<< setw(LAST_NAME_FIELD_WIDTH) << uData->lastName << mTemps.tableSeparatorVertical
+				<< setw(MATCH_SCORE_FIELD_WIDTH) << right << uData->mathScore << mTemps.tableSeparatorVertical
+				<< setw(RU_SCORE_FIELD_WIDTH) << right << uData->ruLangScore << mTemps.tableSeparatorVertical
+				<< setw(EN_SCORE_FIELD_WIDTH) << right << uData->enLangScore << mTemps.tableSeparatorVertical
+				<< setw(TOTAL_SCORE_FIELD_WIDTH) << right << uData->totalScore << mTemps.tableSeparatorVertical << "\n"
+				<< mTemps.tableSeparatorHorizontal << endl;
+
+			cout << "\n\t\t введите новые данные: ";
+
+			userInputFnc(changeUser);
+			appInBinFileFnc(dir, ((dataPage - 1) * DATA_FIELD_LENGTH) + vertPos - IND_CONV_FACTOR, false,
+				dataCount, changeUser, writeInBinFileFnc);
+			++dataCount;
+			changeFlag = true;
+			break;
+
 		case KEY_ESCAPE: // выход из ф. просмотра
 			exitFlag = true;
 			break;
@@ -1070,14 +1173,16 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 	}
 }
 
-void PrintCrateItem(std::string& dir, std::list<ExamResults>& userData, const MenuTemplates& mTemps, u_int& horPos,
-	u_int& vertPos, insertCursorPositionFnc insCurPosFnc, buttonsReadingFnc buttReadFnc, findingCursorPositionFnc1 findCurPosFnc)
+void PrintCrateItem(std::string& dir, const MenuTemplates& mTemps, insertCursorPositionFnc insCurPosFnc, 
+		buttonsReadingFnc buttReadFnc, findingCursorPositionFnc1 findCurPosFnc, userInputFnc userInputFnc)
 {
+	/// ИССПРАВИТЬ ЗАПИСЬ, ДОДЕЛАТЬ UI ///
 	using namespace std;
 
 	bool flagExit = false;
 	u_short codeState;
-	vertPos = 1;
+	u_int vertPos(1);
+	u_int horPos(1);
 
 	while (!flagExit)
 	{
@@ -1108,28 +1213,39 @@ void PrintCrateItem(std::string& dir, std::list<ExamResults>& userData, const Me
 		}
 	}
 
-	userData.clear();
 	flagExit = false;
-	ExamResults bufData;
+
+	ExamResults userData;
+	ExamResultsBinary bufData;
 	int counter = 0;
+
+	ofstream outBinFile(dir, ios::trunc | ios::binary);
+
 	while (!flagExit)
 	{
 		system("cls");
 		cout << "Введите данные:" << endl;
-		getline(cin, bufData.firstName);
-		getline(cin, bufData.lastName);
-		cin >> bufData.mathScore;
-		cin >> bufData.ruLangScore;
-		cin >> bufData.enLangScore;
-		userData.push_back(bufData);
+		UserInput(userData);
 		++counter;
-		cout << "_________________";
+		cout << "---------------------------------------нажмите ESC для выхода---------------------------------" << endl;
+		// копирование данных в структуру для записи
+		strcpy_s(bufData.firstName, LENGTH_FIRST_NAME, userData.firstName.c_str());
+		strcpy_s(bufData.lastName, LENGTH_LAST_NAME, userData.lastName.c_str());
+		bufData.mathScore = userData.mathScore;
+		bufData.ruLangScore = userData.ruLangScore;
+		bufData.enLangScore = userData.enLangScore;
+
+		// запись структуры
+
+		outBinFile.write(bufData.firstName, sizeof(*bufData.lastName) * LENGTH_FIRST_NAME);
+		outBinFile.write(bufData.lastName, sizeof(*bufData.firstName) * LENGTH_LAST_NAME);
+		outBinFile.write((char*)&bufData.mathScore, sizeof(bufData.mathScore));
+		outBinFile.write((char*)&bufData.ruLangScore, sizeof(bufData.ruLangScore));
+		outBinFile.write((char*)&bufData.enLangScore, sizeof(bufData.enLangScore));
+
 		if (buttReadFnc(horPos, vertPos) == KEY_ESCAPE) {
+			outBinFile.close();
 			flagExit = true;
 		}
-	}
-
-	ofstream fout(dir, ios::trunc | ios::binary);
-	fout.write((char*)&userData, counter * sizeof(ExamResults));
-	fout.close();
+	}	
 }
