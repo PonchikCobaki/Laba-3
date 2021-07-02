@@ -41,26 +41,25 @@ enum MenuItems
 {
 	ITEM_VIEW = 1,
 	ITEM_SEARCH,
-	ITEM_APPEND,
 	ITEM_STATISTICS,
 	ITEM_CRATE,
 	ITEM_EXIT,
 };
 
-enum AppendMenuItems
+enum SelectionMenuItems
 {
-	ITEM_APPEND_YES = 1,
-	ITEM_APPEND_NO,
+	ITEM_SELECTION_YES = 1,
+	ITEM_SELECTION_NO,
 };
 
 enum MenuSizes {
-	HEIGHT_ITEM_MAIN = 6,
+	HEIGHT_ITEM_MAIN = 5,
 	LENGTH_ITEM_DEFAULT = 1,
 	HEIGHT_ITEM_VIEW = 15,
-	HEIGHT_ITEM_APPEND = 2,
+	HEIGHT_ITEM_SELECTION = 2,
 };
 
-enum PositionSteps
+enum DefalutPositionStepers
 {
 	HORIZONTAL_STEP = 1,
 	VERTICAL_STEP = 1,
@@ -77,7 +76,7 @@ enum MenuLevels
 	LEVEL_MAIN,
 	LEVEL_VIEW,
 	LEVEL_SEARCH,
-	LEVEL_APPEND
+	LEVEL_SELECTION
 };
 
 enum StringFieldLength
@@ -110,7 +109,7 @@ enum IndexConst {
 };
 
 enum DataBuffersSize {
-	SUBFILE_SIZE = 7 * DATA_FIELD_LENGTH, // 98 размер под файлов для удаления/изменения данных 7
+	SUBFILE_SIZE = 7 * DATA_FIELD_LENGTH, // 7*14=98; размер подфайлов для удаления/изменения данных
 };
 
 #pragma pack(1)
@@ -122,7 +121,6 @@ static struct MenuTemplates
 	std::string itemMainDescription;
 	std::string lineView;
 	std::string lineSearch;
-	std::string lineAppend;
 	std::string lineStatistics;
 	std::string lineCreate;
 	std::string lineExit;
@@ -134,8 +132,8 @@ static struct MenuTemplates
 	std::string tablePage;
 	std::string tablePageSeparator;
 
-	std::string appLineYes;
-	std::string appLineNo;
+	std::string selLineYes;
+	std::string selLineNo;
 };
 #pragma pack (pop)
 
@@ -183,7 +181,8 @@ using appendInBinaryFileFnc		= void(*)(const std::string& dir, const u_int& appI
 
 using insertCursorPositionFnc	= std::string(*)(std::string str, const u_int& vertPos, const MenuTemplates& mTemps,
 									u_short level, const u_int& iterator);
-
+using selectionMenuPrintingFnc = bool(*)(std::string title, const MenuTemplates& mTemps, insertCursorPositionFnc insCurPosFnc,
+									buttonsReadingFnc buttReadFnc, findingCursorPositionFnc1 findCurPosFnc);
 
 
 void    CreateRandomBinDataset(std::string dir);
@@ -205,12 +204,15 @@ void	AppendInBinaryFile(const std::string& dir, const u_int& appInd, const bool&
 
 std::string InsertCursorPosition(std::string str, const u_int& vertPos, const MenuTemplates& mTemps,
 	u_short level, const u_int& iterator);
+bool		SelectionMenuPrinting(std::string title, const MenuTemplates& mTemps, insertCursorPositionFnc insCurPosFnc,
+				buttonsReadingFnc buttReadFnc, findingCursorPositionFnc1 findCurPosFnc);
 void		PrintMainMenu(const u_int& vertPos, const MenuTemplates& mTemps, insertCursorPositionFnc insCurPosFnc);
 void		PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const MenuTemplates& mTemps,
-				insertCursorPositionFnc insCurPosFnc, buttonsReadingFnc buttReadFnc, findingCursorPositionFnc2 findCurPosFnc,
-				readingBinaryFileFnc readBinFileFnc, writeInBinaryFileFnc writeInBinFileFnc,
-				deletingFromBinaryFileFnc delFromBinFileFnc, changeDataInBinaryFileFnc changeInBinFileFnc,
-				appendInBinaryFileFnc appInBinFileFnc, userInputFnc userInputFnc);
+			insertCursorPositionFnc insCurPosFnc, selectionMenuPrintingFnc selMenuPrintingFnc,
+			buttonsReadingFnc buttReadFnc, findingCursorPositionFnc1 findCurPosFnc1, findingCursorPositionFnc2 findCurPosFnc2,
+			readingBinaryFileFnc readBinFileFnc, writeInBinaryFileFnc writeInBinFileFnc,
+			deletingFromBinaryFileFnc delFromBinFileFnc, changeDataInBinaryFileFnc changeInBinFileFnc,
+			appendInBinaryFileFnc appInBinFileFnc, userInputFnc userInputFnc);
 
 //
 //void PrintSearchItem();
@@ -220,8 +222,9 @@ void		PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Me
 //void PrintStatisticsItem();
 //
 
-void		PrintCrateItem(std::string& dir, const MenuTemplates& mTemps, insertCursorPositionFnc insCurPosFnc,
-				buttonsReadingFnc buttReadFnc, findingCursorPositionFnc1 findCurPosFnc, userInputFnc userInputFnc);
+void		PrintCreateItem(std::string& dir, const MenuTemplates& mTemps, insertCursorPositionFnc insCurPosFnc,
+				buttonsReadingFnc buttReadFnc, findingCursorPositionFnc1 findCurPosFnc, selectionMenuPrintingFnc selMenuPrintingFnc,
+				userInputFnc userInputFnc);
 
 
 
@@ -244,28 +247,42 @@ int main(int argc, char* argv[])
 
 	//cout << cin.peek() << '\t';
 
-	MenuTemplates allMenuTemplatse = {
+	u_short passingScore;
+	u_short minMathScore;
+	u_short minRuLangScore;
+	u_short minEnLangScore;
+
+	cout << "введите сумму проходных баллов: ";
+	cin >> passingScore;
+	cout << "введите минимальное значение баллов по матаметике: ";
+	cin >> minMathScore;
+	cout << "введите минимальное значение баллов по русскому языку: ";
+	cin >> minRuLangScore;
+	cout << "введите минимальное значение баллов по английскому: ";
+	cin >> minEnLangScore;
+
+	MenuTemplates allMenuTemplates = {
 		">",
 		" ",
 
 		"навигация по меню:  arrow up/down - перемещение вверх/вниз, Enter - выбор пункта",
-		" 1.просмотр файла",
-		" 2.поиск по файлу",
-		" 3.добавление в файл",
-		" 4.вывод статистики",
-		" 5.создание нового файла",
-		" 6.выход",
+		"  просмотр файла",
+		"  поиск по файлу",
+		"  вывод статистики",
+		"  создание нового файла",
+		"  выход",
 
-		"навигация: arrow Up/Down - перемещение вверх/вниз, arrow Right/Left - перемещение \n"
-		"вправо/влево, Enter - выбор элемента, Delite - удаление элеиента, Esc - возврат в меню",
+		"навигация: arrow Up/Down - перемещение вверх/вниз, arrow Right/Left - перемещение вправо/вле-\n"
+		"во, Esc - возврат в меню, Enter - выбор элемента для редактирования нажмите любую клавишу для\n"
+		"ввода нового элемента, Delite - удаление элемента",
 		" |   №#   |           имя           |         фамилия         | матем | русс | англ | сумма |",
 		" +--------+-------------------------+-------------------------+-------+------+------+-------+",
 		"|",
 		"                                   страница ",
 		"/",
 
-		" 1.да",
-		" 2.нет",
+		"  да",
+		"  нет",
 	};
 
 	list<ExamResults> usersData;
@@ -277,7 +294,7 @@ int main(int argc, char* argv[])
 	
 	while (exitFlag)
 	{
-		PrintMainMenu(verticalPos, allMenuTemplatse, InsertCursorPosition);
+		PrintMainMenu(verticalPos, allMenuTemplates, InsertCursorPosition);
 
 		codeItem = ButtonsReading(horizontalPos, verticalPos);
 		FindingCursorPosition(verticalPos, static_cast<int>(HEIGHT_ITEM_MAIN));
@@ -286,10 +303,10 @@ int main(int argc, char* argv[])
 			switch (verticalPos)
 			{
 			case ITEM_VIEW:
-				PrintViewItem(path, usersData, allMenuTemplatse,
-					InsertCursorPosition, ButtonsReading,
-					FindingCursorPosition, ReadingBinaryFile, 
-					WriteInBinaryFile, DeletingFromBinaryFile,
+				PrintViewItem(path, usersData, allMenuTemplates,
+					InsertCursorPosition, SelectionMenuPrinting, ButtonsReading,
+					FindingCursorPosition, FindingCursorPosition,
+					ReadingBinaryFile, WriteInBinaryFile, DeletingFromBinaryFile,
 					ChangeDataInBinaryFile, AppendInBinaryFile, UserInput);
 				break;
 
@@ -299,17 +316,13 @@ int main(int argc, char* argv[])
 				getline(cin, path);
 				break;
 
-			case ITEM_APPEND:
-				
-				break;
-
 			case ITEM_STATISTICS:
 				CreateRandomBinDataset(path);
 				break;
 
 			case ITEM_CRATE:
-				PrintCrateItem(path, allMenuTemplatse, InsertCursorPosition,
-					ButtonsReading, FindingCursorPosition, UserInput);
+				PrintCreateItem(path, allMenuTemplates, InsertCursorPosition,
+					ButtonsReading, FindingCursorPosition, SelectionMenuPrinting, UserInput);
 				//CreateRandomBinDataset(path);
 				break;
 
@@ -343,17 +356,17 @@ void CreateRandomBinDataset(std::string dir)
 
 	ofstream outBinFile(dir, ios::binary);
 	for (u_int i = 0; i < size; i++) {
-		//strcpy_s(users.firstName, LENGTH_FIRST_NAME, firstNames[mersenne() % 10].c_str());
-		//strcpy_s(users.lastName, LENGTH_LAST_NAME, lastNames[mersenne() % 10].c_str());
-		//users.mathScore = mersenne() % 101;
-		//users.ruLangScore = mersenne() % 101;
-		//users.enLangScore = mersenne() % 101;
+		strcpy_s(users.firstName, LENGTH_FIRST_NAME, firstNames[mersenne() % 10].c_str());
+		strcpy_s(users.lastName, LENGTH_LAST_NAME, lastNames[mersenne() % 10].c_str());
+		users.mathScore = mersenne() % 101;
+		users.ruLangScore = mersenne() % 101;
+		users.enLangScore = mersenne() % 101;
 
-		strcpy_s(users.firstName, LENGTH_FIRST_NAME, firstNames[i % 10].c_str());
-		strcpy_s(users.lastName, LENGTH_LAST_NAME, lastNames[i % 10].c_str());
-		users.mathScore = i % 101;
-		users.ruLangScore = i % 101;
-		users.enLangScore = i % 101;
+		//strcpy_s(users.firstName, LENGTH_FIRST_NAME, firstNames[i % 10].c_str());
+		//strcpy_s(users.lastName, LENGTH_LAST_NAME, lastNames[i % 10].c_str());
+		//users.mathScore = i % 101;
+		//users.ruLangScore = i % 101;
+		//users.enLangScore = i % 101;
 
 		outBinFile.write(users.firstName, sizeof(*users.lastName) * LENGTH_FIRST_NAME);
 		outBinFile.write(users.lastName, sizeof(*users.firstName) * LENGTH_LAST_NAME);
@@ -366,7 +379,7 @@ void CreateRandomBinDataset(std::string dir)
 		//	" " << setw(RU_SCORE_FIELD_WIDTH) << users.ruLangScore << " " << setw(EN_SCORE_FIELD_WIDTH) << users.enLangScore << endl;
 	}
 	outBinFile.close();
-	cout << "END";
+	cout << "END" << endl;
 	system("pause");
 }
 
@@ -412,13 +425,16 @@ u_short ButtonsReading(u_int& horPosOut, u_int& vertPosOut)
 	}
 }
 
-void FindingCursorPosition(u_int& vertPosOut, const u_int& heigh)
+void FindingCursorPosition(u_int& vertPosOut, const u_int& height)
 {
 	if (vertPosOut < VERTICAL_BEGIN_POINT) {
-		vertPosOut = (heigh - vertPosOut) % (heigh + 1);
+		vertPosOut = (height - vertPosOut) % (height + 1);
 	}
-	else if (vertPosOut > heigh) {
-		vertPosOut /= heigh;
+	else if (vertPosOut > height && height == 1) {
+		vertPosOut = height;
+	}
+	else if (vertPosOut > height) {
+		vertPosOut = vertPosOut % height;
 	}
 }
 void FindingCursorPosition(u_int& horPosOut, u_int& vertPosOut, const u_int& length, const u_int& height)
@@ -802,12 +818,6 @@ std::string InsertCursorPosition(std::string str, const u_int& vertPos, const Me
 			}
 			break;
 
-		case ITEM_APPEND:
-			if ( mTemps.lineAppend == str ) {
-				str.replace(0, 1, mTemps.cursor);
-			}
-			break;
-
 		case ITEM_STATISTICS:
 			if ( mTemps.lineStatistics == str ) {
 				str.replace(0, 1, mTemps.cursor);
@@ -844,17 +854,17 @@ std::string InsertCursorPosition(std::string str, const u_int& vertPos, const Me
 
 	}
 
-	else if ( level == LEVEL_APPEND ) {
+	else if ( level == LEVEL_SELECTION ) {
 		switch ( vertPos )
 		{
-		case ITEM_APPEND_YES:
-			if (mTemps.appLineYes == str) {
+		case ITEM_SELECTION_YES:
+			if (mTemps.selLineYes == str) {
 				str.replace(0, 1, mTemps.cursor);
 			}
 			break;
 
-		case ITEM_APPEND_NO:
-			if (mTemps.appLineNo == str) {
+		case ITEM_SELECTION_NO:
+			if (mTemps.selLineNo == str) {
 				str.replace(0, 1, mTemps.cursor);
 			}
 			break;
@@ -862,6 +872,80 @@ std::string InsertCursorPosition(std::string str, const u_int& vertPos, const Me
 	}
 
 	return str;
+}
+
+bool SelectionMenuPrinting(std::string title, const MenuTemplates& mTemps, insertCursorPositionFnc insCurPosFnc,
+	buttonsReadingFnc buttReadFnc, findingCursorPositionFnc1 findCurPosFnc)
+{
+	using namespace std;
+
+	u_short codeState;
+	u_int	horPos(HORIZONTAL_BEGIN_POINT);
+	u_int	vertPos(VERTICAL_BEGIN_POINT);
+
+	while (true) {
+		system("cls");
+		cout << title << "\n";
+		cout << insCurPosFnc(mTemps.selLineYes, vertPos, mTemps, LEVEL_SELECTION, 0) << "\n";
+		cout << insCurPosFnc(mTemps.selLineNo, vertPos, mTemps, LEVEL_SELECTION, 0) << endl;
+
+		codeState = buttReadFnc(horPos, vertPos);
+		findCurPosFnc(vertPos, HEIGHT_ITEM_SELECTION);
+
+		if (codeState == KEY_ENTER) {
+			switch (vertPos)
+			{
+			case ITEM_SELECTION_YES:
+				return true;
+
+			case ITEM_SELECTION_NO:
+				return false;
+			}
+		}
+	}
+
+}
+
+void PrintTable() 
+{
+	// заполнение промежуточного потока для вывода таблицы
+	dataBuffer << mTemps.tableSeparatorHorizontal << "\n" << mTemps.tableHeader << "\n" << mTemps.tableSeparatorHorizontal << "\n";
+	for (uIndex = dataViewIndBeg; uIndex <= (dataViewIndBeg + dataViewIndCount - IND_CONV_FACTOR); ++uIndex, ++uData) {
+		u_int printInd;
+		if (dataViewIndBeg != 0 && dataPage != dataPageCount) {
+			printInd = (uIndex % dataViewIndCount) + 1;
+		}
+		else if (dataPage == dataPageCount) {
+			printInd = uIndex - (DATA_FIELD_LENGTH * (dataPageCount - 1)) + 1;
+		}
+		else {
+			printInd = uIndex + 1;
+		}
+		dataBuffer << insCurPosFnc(mTemps.space, vertPos, mTemps, LEVEL_VIEW, printInd)
+			<< mTemps.tableSeparatorVertical << setw(COUNTER_FIELD_WIDTH) << right << uIndex + 1 << mTemps.tableSeparatorVertical
+			<< setw(FIRST_NAME_FIELD_WIDTH) << left << uData->firstName << mTemps.tableSeparatorVertical
+			<< setw(LAST_NAME_FIELD_WIDTH) << uData->lastName << mTemps.tableSeparatorVertical
+			<< setw(MATCH_SCORE_FIELD_WIDTH) << right << uData->mathScore << mTemps.tableSeparatorVertical
+			<< setw(RU_SCORE_FIELD_WIDTH) << right << uData->ruLangScore << mTemps.tableSeparatorVertical
+			<< setw(EN_SCORE_FIELD_WIDTH) << right << uData->enLangScore << mTemps.tableSeparatorVertical
+			<< setw(TOTAL_SCORE_FIELD_WIDTH) << right << uData->totalScore << mTemps.tableSeparatorVertical << "\n"
+			<< mTemps.tableSeparatorHorizontal << "\n";
+
+		//// защита от выхода за диапазон контейнера
+		//if (uIndex != (dataViewIndBeg + dataViewIndCount - IND_CONV_FACTOR)) {
+		//	++uData;
+		//}
+	}
+
+	dataBuffer << mTemps.tablePage << setw(PAGE_FIELD_WIDTH) << right << dataPage << mTemps.tablePageSeparator <<
+		left << dataPageCount << "\n";
+	dataBuffer << mTemps.itemViewDescription << endl;
+
+	// перевод данных из буфера в поток вывода 
+	system("cls");
+	cout << dataBuffer.str();
+	dataBuffer.str("");
+	dataBuffer.clear();
 }
 
 void PrintMainMenu(const u_int& vertPos, const MenuTemplates& mTemps, insertCursorPositionFnc insCurPosFnc)
@@ -872,14 +956,14 @@ void PrintMainMenu(const u_int& vertPos, const MenuTemplates& mTemps, insertCurs
 
 	cout << insCurPosFnc(mTemps.lineView, vertPos, mTemps, LEVEL_MAIN, 0) << endl;
 	cout << insCurPosFnc(mTemps.lineSearch, vertPos, mTemps, LEVEL_MAIN, 0) << endl;
-	cout << insCurPosFnc(mTemps.lineAppend, vertPos, mTemps, LEVEL_MAIN, 0) << endl;
 	cout << insCurPosFnc(mTemps.lineStatistics, vertPos, mTemps, LEVEL_MAIN, 0) << endl;
 	cout << insCurPosFnc(mTemps.lineCreate, vertPos, mTemps, LEVEL_MAIN, 0) << endl;
 	cout << insCurPosFnc(mTemps.lineExit, vertPos, mTemps, LEVEL_MAIN, 0) << endl;
 }
 
 void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const MenuTemplates& mTemps,
-		insertCursorPositionFnc insCurPosFnc, buttonsReadingFnc buttReadFnc, findingCursorPositionFnc2 findCurPosFnc,
+		insertCursorPositionFnc insCurPosFnc, selectionMenuPrintingFnc selMenuPrintingFnc,
+		buttonsReadingFnc buttReadFnc, findingCursorPositionFnc1 findCurPosFnc1, findingCursorPositionFnc2 findCurPosFnc2,
 		readingBinaryFileFnc readBinFileFnc, writeInBinaryFileFnc writeInBinFileFnc,
 		deletingFromBinaryFileFnc delFromBinFileFnc, changeDataInBinaryFileFnc changeInBinFileFnc,
 		appendInBinaryFileFnc appInBinFileFnc, userInputFnc userInputFnc)
@@ -898,8 +982,8 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 		exitFlag = true;
 	}
 
-	u_short codeState(9);							// код клавиши
-	u_int	vertPos(1);								// положение указателя
+	u_short codeState;							// код клавиши
+	u_int	vertPos(VERTICAL_BEGIN_POINT);			// положение указателя
 
 	u_int	dataPage(1);							// текущая страница
 	u_int   prevDataPage(0);						// предыдущая страница
@@ -949,7 +1033,7 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 				dataViewIndCount = dataCount - dataViewIndBeg;
 			}
 
-			findCurPosFnc(dataPage, vertPos, dataPageCount, dataViewIndCount);
+			findCurPosFnc2(dataPage, vertPos, dataPageCount, dataViewIndCount);
 
 			prevDataPage = dataPage;
 		}
@@ -1088,11 +1172,13 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 
 		// обработка клавиш
 		codeState = buttReadFnc(dataPage, vertPos);
-		findCurPosFnc(dataPage, vertPos, dataPageCount, dataViewIndCount);
+		findCurPosFnc2(dataPage, vertPos, dataPageCount, dataViewIndCount);
 		
 		// переменные для изменения данных
 		long int changeInd(0);
+		bool offset;
 		ExamResults changeUser;
+		
 
 		switch (codeState)
 		{
@@ -1140,14 +1226,12 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 			changeFlag = true;
 			break;
 
-		case KEY_OTHER:
-			system("cls");
+		case KEY_OTHER: // добваление данных
 
 			changeInd = dataViewIndCount - vertPos + IND_CONV_FACTOR;
 			advance(uData, (-1) * changeInd);
 
-			cout << "\t\t\t\t добавление на место уеной записи \n"
-				<< mTemps.tableSeparatorHorizontal << " " << mTemps.cursor << mTemps.tableSeparatorVertical
+			dataBuffer << mTemps.tableSeparatorHorizontal << " " << mTemps.cursor << mTemps.tableSeparatorVertical
 				<< setw(COUNTER_FIELD_WIDTH) << right << dataViewIndBeg + vertPos << mTemps.tableSeparatorVertical
 				<< setw(FIRST_NAME_FIELD_WIDTH) << left << uData->firstName << mTemps.tableSeparatorVertical
 				<< setw(LAST_NAME_FIELD_WIDTH) << uData->lastName << mTemps.tableSeparatorVertical
@@ -1157,10 +1241,17 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 				<< setw(TOTAL_SCORE_FIELD_WIDTH) << right << uData->totalScore << mTemps.tableSeparatorVertical << "\n"
 				<< mTemps.tableSeparatorHorizontal << endl;
 
+			offset = !selMenuPrintingFnc(dataBuffer.str() + "добавлениь на место куказанной учетной записи? иначе на место выше",
+				mTemps,	insCurPosFnc, buttReadFnc, findCurPosFnc1); // выбор метса записи
+
+			// очистка буффера
+			dataBuffer.str("");
+			dataBuffer.clear();
+
 			cout << "\n\t\t введите новые данные: ";
 
 			userInputFnc(changeUser);
-			appInBinFileFnc(dir, ((dataPage - 1) * DATA_FIELD_LENGTH) + vertPos - IND_CONV_FACTOR, false,
+			appInBinFileFnc(dir, ((dataPage - 1) * DATA_FIELD_LENGTH) + vertPos - IND_CONV_FACTOR, offset,
 				dataCount, changeUser, writeInBinFileFnc);
 			++dataCount;
 			changeFlag = true;
@@ -1171,63 +1262,38 @@ void PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Men
 			break;
 		}
 	}
+
 }
 
-void PrintCrateItem(std::string& dir, const MenuTemplates& mTemps, insertCursorPositionFnc insCurPosFnc, 
-		buttonsReadingFnc buttReadFnc, findingCursorPositionFnc1 findCurPosFnc, userInputFnc userInputFnc)
+void PrintCreateItem(std::string& dir, const MenuTemplates& mTemps, insertCursorPositionFnc insCurPosFnc, 
+		buttonsReadingFnc buttReadFnc, findingCursorPositionFnc1 findCurPosFnc, selectionMenuPrintingFnc selMenuPrintingFnc,
+		userInputFnc userInputFnc)
 {
-	/// ИССПРАВИТЬ ЗАПИСЬ, ДОДЕЛАТЬ UI ///
 	using namespace std;
 
-	bool flagExit = false;
-	u_short codeState;
-	u_int vertPos(1);
-	u_int horPos(1);
+	system("cls");
 
-	while (!flagExit)
-	{
-		system("cls");
-		cout << "создать новый файл?" << endl;
-		cout << insCurPosFnc(mTemps.appLineYes, vertPos, mTemps, LEVEL_APPEND, 0) << endl;
-		cout << insCurPosFnc(mTemps.appLineNo, vertPos, mTemps, LEVEL_APPEND, 0) << endl;
-
-		codeState = buttReadFnc(horPos, vertPos);
-		findCurPosFnc(vertPos, HEIGHT_ITEM_APPEND);
-
-		if (codeState == KEY_ENTER) {
-			switch (vertPos)
-			{
-			case ITEM_APPEND_YES:
-				system("cls");
-				cout << "введите путь и имя новго файла: ";
-				getline(cin, dir); 
-				cout << endl;
-				flagExit = true;
-				break;
-
-			case ITEM_APPEND_NO:
-				cout << "запись в файл: " << dir << endl;
-				flagExit = true;
-				break;
-			}
-		}
+	if (selMenuPrintingFnc("записать в новом файле?", mTemps, insCurPosFnc, buttReadFnc, findCurPosFnc) == true) {
+		cout << "\n\t\t введите путь и имя новго файла: ";
+		getline(cin, dir);
+		cout << endl; ;
+	}
+	else {
+		cout << "\t\t\t запись в текущий файл: " << dir << endl;
 	}
 
-	flagExit = false;
-
-	ExamResults userData;
-	ExamResultsBinary bufData;
-	int counter = 0;
+	bool flagExit = false;
+	u_int counter(1);
+	ExamResults			userData;
+	ExamResultsBinary	bufData;
 
 	ofstream outBinFile(dir, ios::trunc | ios::binary);
-
+	cout << "Введите данные по порядку" << endl;
 	while (!flagExit)
 	{
-		system("cls");
-		cout << "Введите данные:" << endl;
+		cout << "№ " << counter << " : ";
 		UserInput(userData);
-		++counter;
-		cout << "---------------------------------------нажмите ESC для выхода---------------------------------" << endl;
+
 		// копирование данных в структуру для записи
 		strcpy_s(bufData.firstName, LENGTH_FIRST_NAME, userData.firstName.c_str());
 		strcpy_s(bufData.lastName, LENGTH_LAST_NAME, userData.lastName.c_str());
@@ -1236,16 +1302,22 @@ void PrintCrateItem(std::string& dir, const MenuTemplates& mTemps, insertCursorP
 		bufData.enLangScore = userData.enLangScore;
 
 		// запись структуры
-
 		outBinFile.write(bufData.firstName, sizeof(*bufData.lastName) * LENGTH_FIRST_NAME);
 		outBinFile.write(bufData.lastName, sizeof(*bufData.firstName) * LENGTH_LAST_NAME);
 		outBinFile.write((char*)&bufData.mathScore, sizeof(bufData.mathScore));
 		outBinFile.write((char*)&bufData.ruLangScore, sizeof(bufData.ruLangScore));
 		outBinFile.write((char*)&bufData.enLangScore, sizeof(bufData.enLangScore));
+		
+		++counter;
 
+		// проверка выхода из цикла
+		cout << "---------------------------------------нажмите ESC для выхода---------------------------------" << endl;
+		u_int horPos(HORIZONTAL_BEGIN_POINT);
+		u_int vertPos(VERTICAL_BEGIN_POINT);
 		if (buttReadFnc(horPos, vertPos) == KEY_ESCAPE) {
 			outBinFile.close();
 			flagExit = true;
 		}
 	}	
+
 }
