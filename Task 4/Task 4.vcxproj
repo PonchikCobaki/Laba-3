@@ -139,6 +139,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BinFO.cpp" />
+    <ClCompile Include="CMenu.cpp" />
+    <ClCompile Include="Config.cpp" />
+    <ClCompile Include="Keyboard.cpp" />
     <ClCompile Include="task4.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -147,6 +151,12 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="для отладки учеток.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BinFO.h" />
+    <ClInclude Include="CMenu.h" />
+    <ClInclude Include="Config.h" />
+    <ClInclude Include="Keyboard.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
