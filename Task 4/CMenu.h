@@ -3,6 +3,8 @@
 #include "BinFO.h"
 #include "Keyboard.h"
 
+
+
 enum MenuItems
 {
 	ITEM_VIEW = 1,
@@ -53,6 +55,9 @@ enum WidthOfTableFields
 };
 
 
+#ifndef MENU_TEMP
+#define MENU_TEMP
+
 #pragma pack(1)
 struct MenuTemplates
 {
@@ -79,12 +84,19 @@ struct MenuTemplates
 #pragma pack (pop)
 
 
+
+extern MenuTemplates allMenuTemplates;
+
+#endif
+
+
 using findingCursorPositionFnc1 = void(*)(u_int& vertPosOut, const u_int& heigh);
 using findingCursorPositionFnc2 = void(*)(u_int& horPosOut, u_int& vertPosOut, const u_int& length, const u_int& height);
 using insertCursorPositionFnc =	  std::string(*)(std::string str, const u_int& vertPos, const MenuTemplates& mTemps,
 									u_short level, const u_int& iterator);
 using selectionMenuPrintingFnc =  bool(*)(std::string title, const MenuTemplates& mTemps, insertCursorPositionFnc insCurPosFnc,
 									buttonsReadingFnc buttReadFnc, findingCursorPositionFnc1 findCurPosFnc);
+
 
 void		FindingCursorPosition(u_int& vertPosOut, const u_int& heigh);
 void		FindingCursorPosition(u_int& horPosOut, u_int& vertPosOut, const u_int& length, const u_int& height);
@@ -99,7 +111,6 @@ void		PrintViewItem(std::string dir, std::list<ExamResults>& usersData, const Me
 				readingBinaryFileFnc readBinFileFnc, writeInBinaryFileFnc writeInBinFileFnc,
 				deletingFromBinaryFileFnc delFromBinFileFnc, changeDataInBinaryFileFnc changeInBinFileFnc,
 				appendInBinaryFileFnc appInBinFileFnc, userInputFnc userInputFnc);
-
 void		PrintCreateItem(std::string& dir, const MenuTemplates& mTemps, insertCursorPositionFnc insCurPosFnc,
 				buttonsReadingFnc buttReadFnc, findingCursorPositionFnc1 findCurPosFnc, selectionMenuPrintingFnc selMenuPrintingFnc,
 				userInputFnc userInputFnc);

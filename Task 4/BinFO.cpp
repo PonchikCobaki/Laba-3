@@ -1,5 +1,3 @@
-#pragma once
-#include "Config.h"
 #include "BinFO.h"
 
 void CreateRandomBinDataset(std::string dir)

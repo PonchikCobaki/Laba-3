@@ -31,8 +31,8 @@ using appendInBinaryFileFnc =		void(*)(const std::string& dir, const u_int& appI
 void CreateRandomBinDataset(std::string dir);
 
 
-void ReadingBinaryFile(const std::string& dir, std::list<ExamResults>& usersData, const u_int& uDataReadIndBegOut,
-		const u_int& uDataReadIndCountOut, u_int& uDataCountOut);
+void ReadingBinaryFile(const std::string& dir, std::list<ExamResults>& usersData, const u_int& uDataReadIndBeg,
+		const u_int& uDataReadIndCount, u_int& uDataCountOut);
 void WriteInBinaryFile(const std::string& dir);
 void DeletingFromBinaryFile(const std::string& dir, const u_int& droppedInd,
 		const u_int& dataCount, writeInBinaryFileFnc writeInBinFileFnc);

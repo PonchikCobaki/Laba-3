@@ -44,30 +44,6 @@ int main(int argc, char* argv[])
 	cout << "введите минимальное значение баллов по английскому: ";
 	cin >> minEnLangScore;
 
-	MenuTemplates allMenuTemplates = {
-		">",
-		" ",
-
-		"навигация по меню:  arrow up/down - перемещение вверх/вниз, Enter - выбор пункта",
-		"  просмотр файла",
-		"  поиск по файлу",
-		"  вывод статистики",
-		"  создание нового файла",
-		"  выход",
-
-		"навигация: arrow Up/Down - перемещение вверх/вниз, arrow Right/Left - перемещение вправо/вле-\n"
-		"во, Esc - возврат в меню, Enter - выбор элемента для редактирования нажмите любую клавишу для\n"
-		"ввода нового элемента, Delite - удаление элемента",
-		" |   №#   |           имя           |         фамилия         | матем | русс | англ | сумма |",
-		" +--------+-------------------------+-------------------------+-------+------+------+-------+",
-		"|",
-		"                                   страница ",
-		"/",
-
-		"  да",
-		"  нет",
-	};
-
 	list<ExamResults> usersData;
 	u_int horizontalPos = 1, verticalPos = 1;
 
@@ -122,42 +98,7 @@ int main(int argc, char* argv[])
 
 
 
-//void PrintTable() 
-//{
-//	// заполнение промежуточного потока для вывода таблицы
-//	dataBuffer << mTemps.tableSeparatorHorizontal << "\n" << mTemps.tableHeader << "\n" << mTemps.tableSeparatorHorizontal << "\n";
-//	for (uIndex = dataViewIndBeg; uIndex <= (dataViewIndBeg + dataViewIndCount - IND_CONV_FACTOR); ++uIndex, ++uData) {
-//		u_int printInd;
-//		if (dataViewIndBeg != 0 && dataPage != dataPageCount) {
-//			printInd = (uIndex % dataViewIndCount) + 1;
-//		}
-//		else if (dataPage == dataPageCount) {
-//			printInd = uIndex - (DATA_FIELD_LENGTH * (dataPageCount - 1)) + 1;
-//		}
-//		else {
-//			printInd = uIndex + 1;
-//		}
-//		dataBuffer << insCurPosFnc(mTemps.space, vertPos, mTemps, LEVEL_VIEW, printInd)
-//			<< mTemps.tableSeparatorVertical << setw(COUNTER_FIELD_WIDTH) << right << uIndex + 1 << mTemps.tableSeparatorVertical
-//			<< setw(FIRST_NAME_FIELD_WIDTH) << left << uData->firstName << mTemps.tableSeparatorVertical
-//			<< setw(LAST_NAME_FIELD_WIDTH) << uData->lastName << mTemps.tableSeparatorVertical
-//			<< setw(MATCH_SCORE_FIELD_WIDTH) << right << uData->mathScore << mTemps.tableSeparatorVertical
-//			<< setw(RU_SCORE_FIELD_WIDTH) << right << uData->ruLangScore << mTemps.tableSeparatorVertical
-//			<< setw(EN_SCORE_FIELD_WIDTH) << right << uData->enLangScore << mTemps.tableSeparatorVertical
-//			<< setw(TOTAL_SCORE_FIELD_WIDTH) << right << uData->totalScore << mTemps.tableSeparatorVertical << "\n"
-//			<< mTemps.tableSeparatorHorizontal << "\n";
-//	}
-//
-//	dataBuffer << mTemps.tablePage << setw(PAGE_FIELD_WIDTH) << right << dataPage << mTemps.tablePageSeparator <<
-//		left << dataPageCount << "\n";
-//	dataBuffer << mTemps.itemViewDescription << endl;
-//
-//	// перевод данных из буфера в поток вывода 
-//	system("cls");
-//	cout << dataBuffer.str();
-//	dataBuffer.str("");
-//	dataBuffer.clear();
-//}
+
 
 
 

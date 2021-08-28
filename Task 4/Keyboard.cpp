@@ -1,4 +1,3 @@
-#pragma once
 #include "Keyboard.h"
 
 u_short ButtonsReading(u_int& horPosOut, u_int& vertPosOut)
