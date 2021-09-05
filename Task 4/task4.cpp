@@ -30,19 +30,17 @@ int main(int argc, char* argv[])
 
 	//cout << cin.peek() << '\t';
 
-	u_short passingScore;
-	u_short minMathScore;
-	u_short minRuLangScore;
-	u_short minEnLangScore;
+	u_short passingScore = 100;
+	u_short minMathScore = 0, minRuLangScore = 0, minEnLangScore = 0;
 
-	cout << "введите сумму проходных баллов: ";
+	/*cout << "введите сумму проходных баллов: ";
 	cin >> passingScore;
 	cout << "введите минимальное значение баллов по матаметике: ";
 	cin >> minMathScore;
 	cout << "введите минимальное значение баллов по русскому языку: ";
 	cin >> minRuLangScore;
 	cout << "введите минимальное значение баллов по английскому: ";
-	cin >> minEnLangScore;
+	cin >> minEnLangScore;*/
 
 	list<ExamResults> usersData;
 	u_int horizontalPos = 1, verticalPos = 1;
@@ -62,27 +60,22 @@ int main(int argc, char* argv[])
 			switch (verticalPos)
 			{
 			case ITEM_VIEW:
-				PrintViewItem(path, usersData, allMenuTemplates,
+				PrintTable(path, usersData, allMenuTemplates,
 					InsertCursorPosition, SelectionMenuPrinting, ButtonsReading,
 					FindingCursorPosition, FindingCursorPosition,
 					ReadingBinaryFile, WriteInBinaryFile, DeletingFromBinaryFile,
 					ChangeDataInBinaryFile, AppendInBinaryFile, UserInput);
 				break;
 
-			case ITEM_SEARCH:
-				//SearchItemPrinting();
-				cout << "введите путь и название файла: ";
-				getline(cin, path);
-				break;
-
 			case ITEM_STATISTICS:
-				CreateRandomBinDataset(path);
+				ComputeStatistics(passingScore, minMathScore, minRuLangScore, minEnLangScore, path, usersData,
+					ReadingBinaryFile, PrintTable, allMenuTemplates, InsertCursorPosition, ButtonsReading, FindingCursorPosition);
 				break;
 
-			case ITEM_CRATE:
-				PrintCreateItem(path, allMenuTemplates, InsertCursorPosition,
-					ButtonsReading, FindingCursorPosition, SelectionMenuPrinting, UserInput);
-				//CreateRandomBinDataset(path);
+			case ITEM_CREATE:
+				//PrintCreateItem(path, allMenuTemplates, InsertCursorPosition,
+				//	ButtonsReading, FindingCursorPosition, SelectionMenuPrinting, UserInput);
+				CreateRandomBinDataset(path);
 				break;
 
 			case ITEM_EXIT:

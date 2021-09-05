@@ -46,7 +46,7 @@ void CreateRandomBinDataset(std::string dir)
 	system("pause");
 }
 
-void ReadingBinaryFile(const std::string& dir, std::list<ExamResults>& usersData, const u_int& dataReadIndBeg,
+bool ReadingBinaryFile(const std::string& dir, std::list<ExamResults>& usersData, const u_int& dataReadIndBeg,
 	const u_int& dataReadIndCount, u_int& dataCountOut)
 {
 	using namespace std;
@@ -54,7 +54,9 @@ void ReadingBinaryFile(const std::string& dir, std::list<ExamResults>& usersData
 	// открытие файла
 	ifstream inBinFile(dir, ios::binary);
 	if (!inBinFile) {
-		cerr << "Error opening" << endl;
+		cerr << "Error opening input buffer file on time reading" << endl;
+		system("pause");
+		return true;
 	}
 
 	ExamResultsBinary dataBuffer = {};
@@ -111,9 +113,10 @@ void ReadingBinaryFile(const std::string& dir, std::list<ExamResults>& usersData
 	//}
 	//cout << "read successful" << endl;
 	//system("pause");
+	return false;
 }
 
-void WriteInBinaryFile(const std::string& dir)
+bool WriteInBinaryFile(const std::string& dir)
 {
 	using namespace std;
 
@@ -134,7 +137,7 @@ void WriteInBinaryFile(const std::string& dir)
 	if (!inBufBinFile.is_open()) {
 		cerr << "Error opening input buffer file on time writing" << endl;
 		system("pause");
-		return;
+		return true;
 	}
 	bufFileSize = inBufBinFile.seekg(0, ios::end).tellg() / confVal.writeSize;
 	inBufBinFile.seekg(0, ios::beg);
@@ -148,7 +151,7 @@ void WriteInBinaryFile(const std::string& dir)
 		if (!outBinFile.is_open()) {
 			cerr << "Error opening output file on time writing" << endl;
 			system("pause");
-			return;
+			return true;
 		}
 
 		// запись
@@ -162,9 +165,10 @@ void WriteInBinaryFile(const std::string& dir)
 	}
 
 	remove(dirBuf.c_str());	// удаление подфайла
+	return false;
 }
 
-void DeletingFromBinaryFile(const std::string& dir, const u_int& droppedInd,
+bool DeletingFromBinaryFile(const std::string& dir, const u_int& droppedInd,
 	const u_int& dataCount, writeInBinaryFileFnc writeInBinFileFnc)
 {
 	using namespace std;
@@ -181,6 +185,7 @@ void DeletingFromBinaryFile(const std::string& dir, const u_int& droppedInd,
 	if (!inBinFile) {
 		cerr << "Error opening input file on time deleting" << endl;
 		system("pause");
+		return true;
 	}
 
 	// запись данных в подфайл //
@@ -195,6 +200,7 @@ void DeletingFromBinaryFile(const std::string& dir, const u_int& droppedInd,
 	if (!outBufBinFile) {
 		cerr << "Error opening output buffer file on time deleting" << endl;
 		system("pause");
+		return true;
 	}
 	for (u_int dataInd = 0; dataInd < dataCount; ++dataInd) {
 		// удаление элемента, путем пропуска его записи в подфайл
@@ -222,9 +228,10 @@ void DeletingFromBinaryFile(const std::string& dir, const u_int& droppedInd,
 
 	// запись в основной файл изменённых данных
 	writeInBinFileFnc(dir);
+	return false;
 }
 
-void ChangeDataInBinaryFile(const std::string& dir, const u_int& changeInd, const u_int& dataCount,
+bool ChangeDataInBinaryFile(const std::string& dir, const u_int& changeInd, const u_int& dataCount,
 	const ExamResults& userData, writeInBinaryFileFnc writeInBinFileFnc)
 {
 	using namespace std;
@@ -246,12 +253,14 @@ void ChangeDataInBinaryFile(const std::string& dir, const u_int& changeInd, cons
 	if (!inBinFile) {
 		cerr << "Error opening input file on time change" << endl;
 		system("pause");
+		return true;
 	}
 	// запись в подфайл
 	ofstream outBufBinFile(dirBuf, ios::binary | ios::app);
 	if (!outBufBinFile) {
 		cerr << "Error opening output buffer file on time change" << endl;
 		system("pause");
+		return true;
 	}
 	for (u_int dataInd = 0; dataInd < dataCount; ++dataInd) {
 		// изменение элемента
@@ -283,9 +292,10 @@ void ChangeDataInBinaryFile(const std::string& dir, const u_int& changeInd, cons
 
 	// запись в основной файл изменённых данных
 	writeInBinFileFnc(dir);
+	return false;
 }
 
-void AppendInBinaryFile(const std::string& dir, const u_int& appInd, const bool& offset, const u_int& dataCount,
+bool AppendInBinaryFile(const std::string& dir, const u_int& appInd, const bool& offset, const u_int& dataCount,
 	const ExamResults& userData, writeInBinaryFileFnc writeInBinFileFnc)
 {
 	using namespace std;
@@ -307,12 +317,14 @@ void AppendInBinaryFile(const std::string& dir, const u_int& appInd, const bool&
 	if (!inBinFile) {
 		cerr << "Error opening input file on time change" << endl;
 		system("pause");
+		return true;
 	}
 	// запись в подфайл
 	ofstream outBufBinFile(dirBuf, ios::binary | ios::app);
 	if (!outBufBinFile) {
 		cerr << "Error opening output buffer file on time change" << endl;
 		system("pause");
+		return true;
 	}
 	for (u_int dataInd(0); dataInd < dataCount; ++dataInd) {
 		// изменение элемента
@@ -352,4 +364,5 @@ void AppendInBinaryFile(const std::string& dir, const u_int& appInd, const bool&
 
 	// запись в основной файл изменённых данных
 	writeInBinFileFnc(dir);
+	return false;
 }

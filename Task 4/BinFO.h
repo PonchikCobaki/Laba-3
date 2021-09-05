@@ -17,28 +17,28 @@ enum DataBuffersSize {
 
 
 
-using readingBinaryFileFnc =		void(*)(const std::string& dir, std::list<ExamResults>& usersData, const u_int& uDataReadIndBegOut,
+using readingBinaryFileFnc		= bool(*)(const std::string& dir, std::list<ExamResults>& usersData, const u_int& uDataReadIndBegOut,
 										const u_int& uDataReadIndCountOut, u_int& uDataCountOut);
-using writeInBinaryFileFnc =		void(*)(const std::string& dir);
-using deletingFromBinaryFileFnc =	void(*)(const std::string& dir, const u_int& droppedInd,
+using writeInBinaryFileFnc		= bool(*)(const std::string& dir);
+using deletingFromBinaryFileFnc = bool(*)(const std::string& dir, const u_int& droppedInd,
 										const u_int& dataCount, writeInBinaryFileFnc writeInBinFileFnc);
-using changeDataInBinaryFileFnc =	void(*)(const std::string& dir, const u_int& changeInd, const u_int& dataCount,
+using changeDataInBinaryFileFnc	= bool(*)(const std::string& dir, const u_int& changeInd, const u_int& dataCount,
 										const ExamResults& userData, writeInBinaryFileFnc writeInBinFile);
-using appendInBinaryFileFnc =		void(*)(const std::string& dir, const u_int& appInd, const bool& offset, const u_int& dataCount,
+using appendInBinaryFileFnc		= bool(*)(const std::string& dir, const u_int& appInd, const bool& offset, const u_int& dataCount,
 										const ExamResults& userData, writeInBinaryFileFnc writeInBinFileFnc);
 
 
 void CreateRandomBinDataset(std::string dir);
 
 
-void ReadingBinaryFile(const std::string& dir, std::list<ExamResults>& usersData, const u_int& uDataReadIndBeg,
+bool ReadingBinaryFile(const std::string& dir, std::list<ExamResults>& usersData, const u_int& uDataReadIndBeg,
 		const u_int& uDataReadIndCount, u_int& uDataCountOut);
-void WriteInBinaryFile(const std::string& dir);
-void DeletingFromBinaryFile(const std::string& dir, const u_int& droppedInd,
+bool WriteInBinaryFile(const std::string& dir);
+bool DeletingFromBinaryFile(const std::string& dir, const u_int& droppedInd,
 		const u_int& dataCount, writeInBinaryFileFnc writeInBinFileFnc);
-void ChangeDataInBinaryFile(const std::string& dir, const u_int& changeInd, const u_int& dataCount,
+bool ChangeDataInBinaryFile(const std::string& dir, const u_int& changeInd, const u_int& dataCount,
 		const ExamResults& userData, writeInBinaryFileFnc writeInBinFile);
-void AppendInBinaryFile(const std::string& dir, const u_int& appInd, const bool& offset, const u_int& dataCount,
+bool AppendInBinaryFile(const std::string& dir, const u_int& appInd, const bool& offset, const u_int& dataCount,
 		const ExamResults& userData, writeInBinaryFileFnc writeInBinFileFnc);
 
 //
