@@ -1,5 +1,6 @@
 #include "CMenu.h"
 
+// шаблоны пунктов меню
 MenuTemplates allMenuTemplates = {
 	">>",
 	" ",
@@ -30,6 +31,7 @@ MenuTemplates allMenuTemplates = {
 	"  нет",
 };
 
+//	функция предотвращающая выход переменной верктикального указателя за пределы [V_B_P,height]
 void FindingCursorPosition(u_int& vertPosOut, const u_int& height)
 {
 	if (vertPosOut < VERTICAL_BEGIN_POINT) {
@@ -42,6 +44,7 @@ void FindingCursorPosition(u_int& vertPosOut, const u_int& height)
 		vertPosOut = vertPosOut % height;
 	}
 }
+//	функция предотвращающая выход переменной верктикального и горизонтального указателя за пределы [V_B_P, height], [H_B_P, length]
 void FindingCursorPosition(u_int& horPosOut, u_int& vertPosOut, const u_int& length, const u_int& height)
 {
 	if (horPosOut < HORIZONTAL_BEGIN_POINT) {
@@ -65,8 +68,9 @@ void FindingCursorPosition(u_int& horPosOut, u_int& vertPosOut, const u_int& len
 	}
 }
 
+//	заменяет пробел на указатель
 std::string InsertCursorPosition(std::string str, const u_int& vertPos, const MenuTemplates& mTemps,
-	u_short level, const u_int& iterator)
+				u_short level, const u_int& iterator)
 {
 	using std::replace;
 
@@ -132,8 +136,9 @@ std::string InsertCursorPosition(std::string str, const u_int& vertPos, const Me
 	return str;
 }
 
-bool SelectionMenuPrinting(std::string title, const MenuTemplates& mTemps, insertCursorPositionFnc insCurPosFnc,
-	buttonsReadingFnc buttReadFnc, findingCursorPositionFnc1 findCurPosFnc)
+//	меню выбора да/нет
+bool SelectionMenuPrinting(std::string title, insertCursorPositionFnc insCurPosFnc,
+		buttonsReadingFnc buttReadFnc, findingCursorPositionFnc1 findCurPosFnc)
 {
 	using namespace std;
 
@@ -144,8 +149,8 @@ bool SelectionMenuPrinting(std::string title, const MenuTemplates& mTemps, inser
 	while (true) {
 		system("cls");
 		cout << title << "\n";
-		cout << insCurPosFnc(mTemps.selLineYes, vertPos, mTemps, LEVEL_SELECTION, 0) << "\n";
-		cout << insCurPosFnc(mTemps.selLineNo, vertPos, mTemps, LEVEL_SELECTION, 0) << endl;
+		cout << insCurPosFnc(allMenuTemplates.selLineYes, vertPos, allMenuTemplates, LEVEL_SELECTION, 0) << "\n";
+		cout << insCurPosFnc(allMenuTemplates.selLineNo, vertPos, allMenuTemplates, LEVEL_SELECTION, 0) << endl;
 
 		codeState = buttReadFnc(horPos, vertPos);
 		findCurPosFnc(vertPos, HEIGHT_ITEM_SELECTION);
@@ -164,6 +169,7 @@ bool SelectionMenuPrinting(std::string title, const MenuTemplates& mTemps, inser
 
 }
 
+//	основное меню
 void PrintMainMenu(const u_int& vertPos, const MenuTemplates& mTemps, insertCursorPositionFnc insCurPosFnc)
 {
 	using namespace std;
@@ -176,12 +182,13 @@ void PrintMainMenu(const u_int& vertPos, const MenuTemplates& mTemps, insertCurs
 	cout << insCurPosFnc(mTemps.lineExit, vertPos, mTemps, LEVEL_MAIN, 0) << endl;
 }
 
+// построение таблицы с функциями редактирования
 void PrintTable(std::string dir, std::list<ExamResults>& usersData, const MenuTemplates& mTemps,
-	insertCursorPositionFnc insCurPosFnc, selectionMenuPrintingFnc selMenuPrintingFnc,
-	buttonsReadingFnc buttReadFnc, findingCursorPositionFnc1 findCurPosFnc1, findingCursorPositionFnc2 findCurPosFnc2,
-	readingBinaryFileFnc readBinFileFnc, writeInBinaryFileFnc writeInBinFileFnc,
-	deletingFromBinaryFileFnc delFromBinFileFnc, changeDataInBinaryFileFnc changeInBinFileFnc,
-	appendInBinaryFileFnc appInBinFileFnc, userInputFnc userInputFnc)
+		insertCursorPositionFnc insCurPosFnc, selectionMenuPrintingFnc selMenuPrintingFnc,
+		buttonsReadingFnc buttReadFnc, findingCursorPositionFnc1 findCurPosFnc1, findingCursorPositionFnc2 findCurPosFnc2,
+		readingBinaryFileFnc readBinFileFnc, writeInBinaryFileFnc writeInBinFileFnc,
+		deletingFromBinaryFileFnc delFromBinFileFnc, changeDataInBinaryFileFnc changeInBinFileFnc,
+		appendInBinaryFileFnc appInBinFileFnc, userInputFnc userInputFnc)
 {
 	using namespace std;
 
@@ -457,7 +464,7 @@ void PrintTable(std::string dir, std::list<ExamResults>& usersData, const MenuTe
 				<< mTemps.tableSeparatorHorizontal << endl;
 
 			offset = !selMenuPrintingFnc(dataBuffer.str() + "добавлениь на место куказанной учетной записи? иначе на место выше",
-				mTemps, insCurPosFnc, buttReadFnc, findCurPosFnc1); // выбор метса записи
+						insCurPosFnc, buttReadFnc, findCurPosFnc1); // выбор метса записи
 
 			// очистка буффера
 			dataBuffer.str("");
@@ -479,7 +486,7 @@ void PrintTable(std::string dir, std::list<ExamResults>& usersData, const MenuTe
 	}
 
 }
-
+// упрощённая версия для построение таблицы 
 void PrintTable(const u_int& failCount, std::string dir, std::list<ExamResults>& usersData, const MenuTemplates& mTemps,
 		insertCursorPositionFnc insCurPosFnc, buttonsReadingFnc buttReadFnc, findingCursorPositionFnc2 findCurPosFnc2)
 {
@@ -651,7 +658,7 @@ void PrintTable(const u_int& failCount, std::string dir, std::list<ExamResults>&
 
 		dataBuffer << mTemps.tablePage << setw(PAGE_FIELD_WIDTH) << right << dataPage << mTemps.tablePageSeparator <<
 			left << dataPageCount << "\n";
-		dataBuffer << mTemps.itemViewDescription << endl;
+		dataBuffer << mTemps.itemStatDescription << endl;
 
 		// перевод данных из буфера в поток вывода 
 		system("cls");
@@ -672,38 +679,44 @@ void PrintTable(const u_int& failCount, std::string dir, std::list<ExamResults>&
 
 }
 
+// функция вычисления статискитеских данных
 void ComputeStatistics(const u_short& pasScore, const u_short& minMathScore, const u_short& minRuLangScore,
 		const u_short& minEnLangScore, const std::string dir, std::list<ExamResults>& usersData,
-		readingBinaryFileFnc readBinFileFnc, printTableFnc printTableFnc, const MenuTemplates& mTemps,
-		insertCursorPositionFnc insCurPosFnc, buttonsReadingFnc buttReadFnc, findingCursorPositionFnc2 findCurPosFnc2)
+		readingBinaryFileFnc readBinFileFnc, printTableFnc printTableFnc, insertCursorPositionFnc insCurPosFnc,
+		buttonsReadingFnc buttReadFnc, findingCursorPositionFnc2 findCurPosFnc2)
 {
 
 	using namespace std;
 
 
-	u_int dataCount(0);
-	bool exitFlag(false);
+	u_int dataCount(0);		// кол-во данных
+	bool exitFlag(false);	// флаг выхода из функции
 
 	// чтение файла с данными
 	if (usersData.empty()) {
-		exitFlag = readBinFileFnc(dir, usersData, 0, 0, dataCount);
-		exitFlag = readBinFileFnc(dir, usersData, 0, dataCount, dataCount);
+		exitFlag = readBinFileFnc(dir, usersData, 0, 0, dataCount);			// чтение кол-ва данных
+		exitFlag = readBinFileFnc(dir, usersData, 0, dataCount, dataCount);	// чтение данных
+	}
+	else {
+		dataCount = usersData.size();	// присвоение кол-ва данных
 	}
 	if (exitFlag) {
 		return;
 	}
 
-	vector<u_int> bestScoreListInd;
-	u_short maxScore(0);
-	u_int failCount(0);
-	auto uData = usersData.begin();
+	vector<u_int> bestScoreListInd;	// массив с писком индексов имеющих максимальный балл
+	u_short maxScore(0);			// максимальное значение баллов
+	u_int failCount(0);				// кол-во не проходящих условия
+	auto uData = usersData.begin();	// итератор по контейнеру
 
 	for (unsigned int i = 0; i < dataCount; ++i, ++uData) {
+		// проверка на прохождение по критериям
 		if (uData->totalScore < pasScore || uData->mathScore < minMathScore
 			|| uData->ruLangScore < minRuLangScore || uData->enLangScore < minEnLangScore) {
 			++failCount;
 			continue;
 		}
+		// проверка на макстимальный балл
 		if (uData->totalScore == maxScore) {
 			bestScoreListInd.push_back(i);
 		}
@@ -714,6 +727,7 @@ void ComputeStatistics(const u_short& pasScore, const u_short& minMathScore, con
 		}
 	}
 
+	// создание нового контейнера учетных запесей с лучшими баллами
 	uData = usersData.begin();
 	list<ExamResults> bestScoreList;
 	for (u_int j = 0; j < bestScoreListInd.size(); ++j) {
@@ -722,19 +736,21 @@ void ComputeStatistics(const u_short& pasScore, const u_short& minMathScore, con
 		bestScoreList.push_back(*uData);
 	}
 
+	// вывод результатов 
 	printTableFnc((float(failCount) / dataCount) * 100, dir, bestScoreList, allMenuTemplates,
 		insCurPosFnc, buttReadFnc, findCurPosFnc2);
 }
 
-void PrintCreateItem(std::string& dir, const MenuTemplates& mTemps, insertCursorPositionFnc insCurPosFnc,
-	buttonsReadingFnc buttReadFnc, findingCursorPositionFnc1 findCurPosFnc, selectionMenuPrintingFnc selMenuPrintingFnc,
-	userInputFnc userInputFnc)
+// функция создания нового файла в ручную
+void PrintCreateItem(std::string& dir, insertCursorPositionFnc insCurPosFnc, buttonsReadingFnc buttReadFnc,
+		findingCursorPositionFnc1 findCurPosFnc, selectionMenuPrintingFnc selMenuPrintingFnc, userInputFnc userInputFnc)
 {
 	using namespace std;
 
 	system("cls");
 
-	if (selMenuPrintingFnc("записать в новый файл?", mTemps, insCurPosFnc, buttReadFnc, findCurPosFnc) == true) {
+	// меню выбора
+	if (selMenuPrintingFnc("записать в новый файл?", insCurPosFnc, buttReadFnc, findCurPosFnc) == true) {
 		cout << "\n\t\t введите путь и имя новго файла: ";
 		getline(cin, dir);
 		cout << endl; ;
@@ -743,12 +759,14 @@ void PrintCreateItem(std::string& dir, const MenuTemplates& mTemps, insertCursor
 		cout << "\t\t\t запись в текущий файл: " << dir << endl;
 	}
 
-	bool flagExit = false;
-	u_int counter(1);
-	ExamResults			userData;
-	ExamResultsBinary	bufData;
+	bool flagExit(false);
+	u_int counter(1);				// абсолютный счётчик
+	ExamResults			userData;	// промежуточная структура для записи
+	ExamResultsBinary	bufData;	// структура для записи в бинарный файл
 
+	//	открытие файла
 	ofstream outBinFile(dir, ios::trunc | ios::binary);
+	// чтение данных
 	cout << "Введите данные по порядку" << endl;
 	while (!flagExit)
 	{
@@ -769,9 +787,9 @@ void PrintCreateItem(std::string& dir, const MenuTemplates& mTemps, insertCursor
 		outBinFile.write((char*)&bufData.ruLangScore, sizeof(bufData.ruLangScore));
 		outBinFile.write((char*)&bufData.enLangScore, sizeof(bufData.enLangScore));
 
-		++counter;
+		++counter;	// абсолютный счётчик
 
-		// проверка выхода из цикла
+		// проверка на выхода из цикла
 		cout << "---------------------------------------нажмите ESC для выхода---------------------------------" << endl;
 		u_int horPos(HORIZONTAL_BEGIN_POINT);
 		u_int vertPos(VERTICAL_BEGIN_POINT);

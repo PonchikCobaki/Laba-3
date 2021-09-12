@@ -1,6 +1,5 @@
 #pragma once
 
-#include <algorithm>
 #include <conio.h>
 #include <sstream>
 #include <string>
@@ -12,19 +11,18 @@
 #include <iterator>
 #include <random>
 #include <Windows.h>
-#include <filesystem>
 
 
 
-enum StringFieldLength
+enum StringFieldLength	//	перечесление размеров поля имен в структуре
 {
 	LENGTH_FIRST_NAME = 25,
 	LENGTH_LAST_NAME = 25,
 };
 
-
 #pragma pack(1)
-struct ExamResults {
+struct ExamResults	//	структура учетной записи
+{	
 	std::string firstName;
 	std::string lastName;
 	u_short mathScore;
@@ -35,7 +33,8 @@ struct ExamResults {
 #pragma pack (pop)
 
 #pragma pack(1)
-struct ExamResultsBinary {
+struct ExamResultsBinary	// структура для записи в бинарный файл
+{
 	char* firstName = new char[LENGTH_FIRST_NAME];
 	char* lastName = new char[LENGTH_LAST_NAME];
 	u_short mathScore;

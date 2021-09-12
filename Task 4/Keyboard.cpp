@@ -1,10 +1,12 @@
 #include "Keyboard.h"
 
+// функция чтения клавиш клавиатуры
 u_short ButtonsReading(u_int& horPosOut, u_int& vertPosOut)
 {
 	using std::cout;
 	using std::endl;
 
+	// первый опрос клавишь
 	switch (_getch())
 	{
 	case CODE_ESCAPE:
@@ -42,26 +44,28 @@ u_short ButtonsReading(u_int& horPosOut, u_int& vertPosOut)
 	}
 }
 
+// функция ввода с клавиатурыы
 void UserInput(ExamResults& userData)
 {
 	SetConsoleCP(1251);
 	SetConsoleOutputCP(1251);
 	using namespace std;
 
-	stringstream input;
-	string buffer;
-	string subBuffer;
+	stringstream input;	//	поток для записи
+	string buffer;		//	буффер
+	string subBuffer;	//	буффер для чисел
 	getline(cin, buffer);
 	input << buffer;
 
-	// запись строк
+	// чтение строк
 	while (buffer.length() == 0) {
 		getline(cin, buffer);
 		input << buffer;
 		cout << "\t";
 	}
 
-	input >> userData.firstName;
+	// запись строк
+	input >> userData.firstName;	
 	input >> userData.lastName;
 
 	// запись чисел с преобразованием из строк

@@ -1,5 +1,6 @@
 #include "BinFO.h"
 
+// функция автозаполнения файла
 void CreateRandomBinDataset(std::string dir)
 {
 	using namespace std;
@@ -46,6 +47,7 @@ void CreateRandomBinDataset(std::string dir)
 	system("pause");
 }
 
+// функция чтения файла
 bool ReadingBinaryFile(const std::string& dir, std::list<ExamResults>& usersData, const u_int& dataReadIndBeg,
 	const u_int& dataReadIndCount, u_int& dataCountOut)
 {
@@ -69,21 +71,8 @@ bool ReadingBinaryFile(const std::string& dir, std::list<ExamResults>& usersData
 
 	auto userData = usersData.begin();
 	for (u_int i = 0; i < dataReadIndCount; ++i, ++userData) {
-		/*	cout << "outBinFile.fail() " << inBinFile.fail() << endl;
-			cout << "outBinFile.rdstate() " << inBinFile.rdstate() << endl;
-			if (inBinFile.rdstate() == ios::goodbit) {
-				cout << "stream state is goodbit\n";
-			}
-			else if (inBinFile.rdstate() == ios::badbit) {
-				cout << "stream state is badbit\n";
-			}
-			else if (inBinFile.rdstate() == ios::failbit) {
-				cout << "stream state is failbit\n";
-			}
-			else if (inBinFile.rdstate() == ios::eofbit) {
-				cout << "stream state is eofbit\n";
-			}*/
-			// чтение в структуру-буффер для бинарного файла
+
+		// чтение в структуру-буффер для бинарного файла
 		inBinFile.read(dataBuffer.firstName, sizeof(*dataBuffer.firstName) * LENGTH_FIRST_NAME);
 		inBinFile.read(dataBuffer.lastName, sizeof(*dataBuffer.lastName) * LENGTH_LAST_NAME);
 		inBinFile.read(reinterpret_cast<char*>(&dataBuffer.mathScore), sizeof(dataBuffer.mathScore));
@@ -105,17 +94,10 @@ bool ReadingBinaryFile(const std::string& dir, std::list<ExamResults>& usersData
 
 	inBinFile.close();
 
-	//int count = 0;
-	//for (const ExamResults& id : usersData) {
-	//	cout << count << " " << id.firstName << " " << id.lastName << " " << id.mathScore
-	//		<< " " << id.ruLangScore << " " << id.enLangScore << endl;
-	//	++count;
-	//}
-	//cout << "read successful" << endl;
-	//system("pause");
 	return false;
 }
 
+// функция записи в файл
 bool WriteInBinaryFile(const std::string& dir)
 {
 	using namespace std;
@@ -168,6 +150,7 @@ bool WriteInBinaryFile(const std::string& dir)
 	return false;
 }
 
+// функция удаления из файла
 bool DeletingFromBinaryFile(const std::string& dir, const u_int& droppedInd,
 	const u_int& dataCount, writeInBinaryFileFnc writeInBinFileFnc)
 {
@@ -231,6 +214,7 @@ bool DeletingFromBinaryFile(const std::string& dir, const u_int& droppedInd,
 	return false;
 }
 
+// функция изменения файла
 bool ChangeDataInBinaryFile(const std::string& dir, const u_int& changeInd, const u_int& dataCount,
 	const ExamResults& userData, writeInBinaryFileFnc writeInBinFileFnc)
 {
@@ -295,6 +279,7 @@ bool ChangeDataInBinaryFile(const std::string& dir, const u_int& changeInd, cons
 	return false;
 }
 
+// функция добавления в файл
 bool AppendInBinaryFile(const std::string& dir, const u_int& appInd, const bool& offset, const u_int& dataCount,
 	const ExamResults& userData, writeInBinaryFileFnc writeInBinFileFnc)
 {
